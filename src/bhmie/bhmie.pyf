@@ -1,0 +1,21 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module bhmie ! in 
+    interface  ! in :bhmie
+        subroutine bhmie(x,refrel,nang,s1,s2,qext,qsca,qback,gsca) ! in :bhmie:bhmie.f
+            real :: x
+            complex :: refrel
+            integer :: nang
+            complex dimension(1999),intent(out) :: s1
+            complex dimension(1999),intent(out) :: s2
+            real intent(out) :: qext
+            real intent(out) :: qsca
+            real intent(out) :: qback
+            real intent(out) :: gsca
+        end subroutine bhmie
+    end interface 
+end python module bhmie
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

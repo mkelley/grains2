@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+import sys
+# sys.path.append('/home/msk/local/python/')
+import argparse
+
+import numpy as np
+import matplotlib.pyplot as plt
+from astropy.table import Table, Column
+from mskpy import davint
+import grains2
+
+parser = argparse.ArgumentParser()
+parser.add_argument('dirt_fraction', type=float)
+parser.add_argument('radius', type=float, help='μm')
+args = parser.parse_args()
+
+
+def lifetime(a, m, rh):
+    g = grains2.SublimationLTE(a, m, rh)
+
+    dadt = g.dadt()
+    tau = [davint(a, -1.0 / dadt, a[0], b) for b in a[2:]]
+    tau = -a[0] / dadt[0] + np.r_[0, (a[0] - a[1]) / dadt[1], tau]
+
+    # add sputtering from nominal solar wind
+    Zsp = 1.1e8 * rh**-2  # molec/s/cm2, Mukai and Schwem 1981
+    dadt -= 1e7 * Zsp * g.m.mu / g.m.rho
+    tau_sp = [davint(a, -1.0 / dadt, a[0], b) for b in a[2:]]
+    tau_sp = -a[0] / dadt[0] + np.r_[0, (a[0] - a[1]) / dadt[1], tau_sp]
+
+    return tau, tau_sp
+
+
+plt.clf()
+a = np.logspace(np.log10(0.01), np.log10(args.radius))
+ice = grains2.waterice()
+if args.dirt_fraction > 0:
+    r = (1 - args.dirt_fraction, args.dirt_fraction)
+    emt = grains2.Bruggeman()
+    mix = emt.mix((grains2.waterice(), grains2.amcarbon()), r,
+                  name=('water ice({:.1%})+amorphous carbon({:.1%})'
+                        .format(*r)))
+    ice.ri = mix.ri  # update n,k but use all other parameters
+    ice.name = mix.name
+
+print('dirt_fraction:', args.dirt_fraction)
+print('radius:', args.radius)
+print(ice)
+
+tab = Table([a], names=['a'])
+for rh in np.r_[[1.51, 3.11, 2.55, 2.45], 1.1**np.arange(18)]:
+    print(rh)
+    tau, tau_sp = lifetime(a, ice, rh)
+    plt.plot(np.log10(a), np.log10(tau_sp))
+    print('    {:.4g}'.format(tau_sp[-1]))
+    tab.add_column(Column(tau_sp, 'tau({:.2f}au)'.format(rh)))
+
+tab.meta['comments'] = [str(ice)]
+tab.write('lifetime-{}.txt'.format(args.dirt_fraction),
+          format='ascii.fixed_width_two_line', overwrite=True)

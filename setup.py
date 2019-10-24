@@ -15,6 +15,7 @@ if __name__ == "__main__":
           packages=find_packages(),
           package_data={'grains2': ['data/*']},
           ext_modules=ext,
+          scripts=['scripts/water-ice-lifetime'],
           requires=['numpy', 'astropy'],
-#          license='BSD',
-      )
+          #          license='BSD',
+          )

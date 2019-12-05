@@ -20,6 +20,7 @@ __all__ = [
     'SublimationLTE'
 ]
 
+
 class RadiativeLTE(object):
     """Abstract base class for grains in radiative LTE.
 
@@ -54,7 +55,7 @@ class RadiativeLTE(object):
       Set to True to update on intialization.
 
     """
-    
+
     _T = np.array([0])
     _updated = False
     _updating = False
@@ -89,16 +90,16 @@ class RadiativeLTE(object):
                 S = (w.to(u.um).value, f.value)
             elif S.lower() == 'harker mie idl':
                 # solar spectrum used by D. Harker, dated 19 Mar 1999
-                temp = [.20,.22,.24,.26,.28,.30,.32,.34,.36,.37,.38,.39,.40,
-                         .41,.42,.43,.44,.45,.46,.48,.50,.55,.60,.65,.70,.75,
-                         .80,.90,1.0,1.1,1.2,1.4,1.6,1.8,2.0,2.5,3.0,4.,5.,6.,
-                         8.,10.,12.]
+                temp = [.20, .22, .24, .26, .28, .30, .32, .34, .36, .37, .38, .39, .40,
+                        .41, .42, .43, .44, .45, .46, .48, .50, .55, .60, .65, .70, .75,
+                        .80, .90, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0, 4., 5., 6.,
+                        8., 10., 12.]
                 S = np.zeros((2, len(temp)))
                 S[0] = temp
-                temp = [1.2,4.5,6.4,13.,25.,59.,85.,114.,115.,127.,121.,115.,
-                        160.,187.,189.,183.,201.,213.,215.,213.,204.,198.,187.,
-                        167.,149.,129.,114.,90.,74.,61.,50.,33.,22.3,14.8,10.2,
-                        4.97,2.63,.93,.41,.21,.063,.023,.012]
+                temp = [1.2, 4.5, 6.4, 13., 25., 59., 85., 114., 115., 127., 121., 115.,
+                        160., 187., 189., 183., 201., 213., 215., 213., 204., 198., 187.,
+                        167., 149., 129., 114., 90., 74., 61., 50., 33., 22.3, 14.8, 10.2,
+                        4.97, 2.63, .93, .41, .21, .063, .023, .012]
                 S[1] = np.array(temp) * 10.
                 del temp
             else:
@@ -138,19 +139,31 @@ class RadiativeLTE(object):
 
         self.R = np.zeros((len(self.a), self.wave.size), np.complex)
         self.Qabs = np.zeros((len(self.a), self.wave.size))
+        self.Qsca = np.zeros((len(self.a), self.wave.size))
+        self.Qext = np.zeros((len(self.a), self.wave.size))
         self.SQ = np.zeros_like(self.a)
+        SQsca = np.zeros_like(self.a)
+        SQext = np.zeros_like(self.a)
         self.Qabs_bar = np.zeros_like(self.a)
+        self.Qsca_bar = np.zeros_like(self.a)
+        self.Qext_bar = np.zeros_like(self.a)
 
         self.Qabs_orig = np.zeros((len(self.a), self.m.ri.wave.size))
+        self.Qsca_orig = np.zeros((len(self.a), self.m.ri.wave.size))
+        self.Qext_orig = np.zeros((len(self.a), self.m.ri.wave.size))
         for i in range(len(self.a)):
-            # compute Qabs, then interpolate
+            # compute Qabs, Qsca, and Qext, then interpolate
             w = self.m.ri.wave
             m = self.porosity(self.m, self.a[i])
-            Qabs = self.scattering.qabs(self.a[i], w, m.ri)
-            self.Qabs_orig[i] = Qabs
-            j = Qabs > 0
+            Q = self.scattering.q(self.a[i], w, m.ri)
+
+            self.Qabs_orig[i] = Q['qabs']
+            self.Qsca_orig[i] = Q['qsca']
+            self.Qext_orig[i] = Q['qext']
+
+            j = Q['qabs'] > 0
             v = splev(np.log(self.wave),
-                      splrep(np.log(w[j]), np.log(Qabs[j])),
+                      splrep(np.log(w[j]), np.log(Q['qabs'][j])),
                       ext=1)
             j = v != 0
             self.Qabs[i, j] = np.exp(v[j])
@@ -161,12 +174,48 @@ class RadiativeLTE(object):
                 print(self.wave[k])
                 self.Qabs[i, k] = 0
 
+            j = Q['qsca'] > 0
+            v = splev(np.log(self.wave),
+                      splrep(np.log(w[j]), np.log(Q['qsca'][j])),
+                      ext=1)
+            j = v != 0
+            self.Qsca[i, j] = np.exp(v[j])
+
+            if any(self.Qsca[i] < 0):
+                print("Warning: Found Qsca value(s) less than zero.  Fixing.")
+                k = self.Qsca[i] < 0
+                print(self.wave[k])
+                self.Qsca[i, k] = 0
+
+            j = Q['qext'] > 0
+            v = splev(np.log(self.wave),
+                      splrep(np.log(w[j]), np.log(Q['qext'][j])),
+                      ext=1)
+            j = v != 0
+            self.Qext[i, j] = np.exp(v[j])
+
+            if any(self.Qext[i] < 0):
+                print("Warning: Found Qext value(s) less than zero.  Fixing.")
+                k = self.Qext[i] < 0
+                print(self.wave[k])
+                self.Qext[i, k] = 0
+
             j = (self.S * self.Qabs[i]) > 0
             self.SQ[i] = davint(self.wave[j], self.S[j] * self.Qabs[i, j],
                                 self.wave[j][0], self.wave[j][-1])
             temp = davint(self.wave[j], self.S[j], self.wave[j][0],
                           self.wave[j][-1])
             self.Qabs_bar[i] = self.SQ[i] / temp
+
+            j = (self.S * self.Qsca[i]) > 0
+            SQsca[i] = davint(self.wave[j], self.S[j] * self.Qsca[i, j],
+                              self.wave[j][0], self.wave[j][-1])
+            self.Qsca_bar[i] = SQsca[i] / temp
+
+            j = (self.S * self.Qext[i]) > 0
+            SQext[i] = davint(self.wave[j], self.S[j] * self.Qext[i, j],
+                              self.wave[j][0], self.wave[j][-1])
+            self.Qext_bar[i] = SQext[i] / temp
 
     @property
     def T(self):
@@ -363,6 +412,7 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
         BQ = davint(self.wave, B * Qabs, self.wave[0], self.wave[-1])
         return 4.0 * pi * (a * 1e-6)**2 * BQ
 
+
 class SublimationLTE(RadiativeLTE):
     """Sublimating grain in vacuum and radiation.
 
@@ -422,6 +472,7 @@ class SublimationLTE(RadiativeLTE):
         """Differential variation of radius with time. [micron/s]"""
         T = self.T if T is None else T
         return -1e6 * self.phi(T) / (self.m.rho * 1e3)
+
 
 # update module docstring
 from mskpy.util import autodoc

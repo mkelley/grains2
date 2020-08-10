@@ -6,8 +6,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table, Column
-from mskpy import davint
-import grains2
+from grains2 import davint, waterice, amcarbon, Bruggeman, SublimationLTE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dirt_fraction', type=float)
@@ -16,7 +15,7 @@ args = parser.parse_args()
 
 
 def lifetime(a, m, rh):
-    g = grains2.SublimationLTE(a, m, rh)
+    g = SublimationLTE(a, m, rh)
 
     dadt = g.dadt()
     tau = [davint(a, -1.0 / dadt, a[0], b) for b in a[2:]]
@@ -33,11 +32,11 @@ def lifetime(a, m, rh):
 
 plt.clf()
 a = np.logspace(np.log10(0.01), np.log10(args.radius))
-ice = grains2.waterice()
+ice = waterice()
 if args.dirt_fraction > 0:
     r = (1 - args.dirt_fraction, args.dirt_fraction)
-    emt = grains2.Bruggeman()
-    mix = emt.mix((grains2.waterice(), grains2.amcarbon()), r,
+    emt = Bruggeman()
+    mix = emt.mix((waterice(), amcarbon()), r,
                   name=('water ice({:.1%})+amorphous carbon({:.1%})'
                         .format(*r)))
     ice.ri = mix.ri  # update n,k but use all other parameters

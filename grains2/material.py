@@ -34,17 +34,18 @@ import numpy as np
 from pkg_resources import resource_filename
 
 __all__ = [
-   'amcarbon',
-   'amolivine40',
-   'amolivine50',
-   'ampyroxene40',
-   'ampyroxene50',
-   'magnetite',
-   'neutral',
-   'olivine95',
-   'vacuum',
-   'waterice'
+    'amcarbon',
+    'amolivine40',
+    'amolivine50',
+    'ampyroxene40',
+    'ampyroxene50',
+    'magnetite',
+    'neutral',
+    'olivine95',
+    'vacuum',
+    'waterice'
 ]
+
 
 class RefractiveIndices(object):
     """Refractive index.
@@ -220,6 +221,7 @@ class RefractiveIndices(object):
         """nk for each of the anisotropic axes."""
         return self.axes.values()
 
+
 def load_refractive_indices(filename):
     """Load a saved set of refractive indices.
 
@@ -241,6 +243,7 @@ def load_refractive_indices(filename):
         for k in t.colnames[1:]:
             axes[k] = t[k].data
         return RefractiveIndices(t['wave'].data, axes)
+
 
 class Material(object):
     """Physical properties of materials.
@@ -274,12 +277,14 @@ class Material(object):
     def __repr__(self):
         return "<grains.materials.Material [{}]>".format(self.name)
 
+
 def amcarbon(**keywords):
     """Amorphous carbon."""
     fn = resource_filename('grains2', os.path.join('data', 'am-carbon.dat'))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
-    return Material("amorphous carbon", rho=2.5, ri=ri, **keywords)
+    return Material("amorphous carbon", rho=1.5, ri=ri, **keywords)
+
 
 def amolivine40(**keywords):
     """"Amorphous" olivine with Mg/Fe = 40/60."""
@@ -288,6 +293,7 @@ def amolivine40(**keywords):
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous olivine 40/60", rho=3.3, ri=ri, **keywords)
 
+
 def amolivine50(**keywords):
     """"Amorphous" olivine with Mg/Fe = 50/50."""
     fn = resource_filename('grains2', os.path.join('data', 'olivine-mg50.dat'))
@@ -295,19 +301,24 @@ def amolivine50(**keywords):
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous olivine 50/50", rho=3.3, ri=ri, **keywords)
 
+
 def ampyroxene40(**keywords):
     """"Amorphous" pyroxene with Mg/Fe = 40/60."""
-    fn = resource_filename('grains2', os.path.join('data', 'pyroxene-mg40.dat'))
+    fn = resource_filename(
+        'grains2', os.path.join('data', 'pyroxene-mg40.dat'))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous pyroxene 40/60", rho=3.3, ri=ri, **keywords)
 
+
 def ampyroxene50(**keywords):
     """"Amorphous" pyroxene with Mg/Fe = 50/50."""
-    fn = resource_filename('grains2', os.path.join('data', 'pyroxene-mg50.dat'))
+    fn = resource_filename(
+        'grains2', os.path.join('data', 'pyroxene-mg50.dat'))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous pyroxene 50/50", rho=3.3, ri=ri, **keywords)
+
 
 def magnetite(**keywords):
     """Magnetite, Fe3O4."""
@@ -316,6 +327,7 @@ def magnetite(**keywords):
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("magnetite", ri=ri, **keywords)
 
+
 def wustite(**keywords):
     """Wüstite, Fe3O4."""
     fn = resource_filename('grains2', os.path.join('data', 'fe100o.txt'))
@@ -323,12 +335,14 @@ def wustite(**keywords):
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("Wüstite", ri=ri, **keywords)
 
+
 def ferropericlase50(**keywords):
     """Ferropericlase Mg_0.5 Fe_0.5 O."""
     fn = resource_filename('grains2', os.path.join('data', 'fe50o.txt'))
     x = np.loadtxt(fn, skiprows=4).T
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("ferropericlase 50", ri=ri, **keywords)
+
 
 def neutral(nk, wave=None, **keywords):
     """A neutral scatterer, specify nk.
@@ -345,6 +359,7 @@ def neutral(nk, wave=None, **keywords):
         wave = np.logspace(-2, 3, 1000)
     ri = RefractiveIndices(wave, np.ones(len(wave), complex) * nk)
     return Material("neutral scattering", ri=ri, **keywords)
+
 
 def olivine95(**keywords):
     """Olivine with Mg/Fe = 95/5 (Mg_1.9 Fe_0.1 SiO_4)."""
@@ -363,6 +378,7 @@ def olivine95(**keywords):
     ri = RefractiveIndices(w, nk)
     return Material("olivine 95/5", rho=3.3, ri=ri, **keywords)
 
+
 def vacuum(wave=None, **keywords):
     """Vacuum.
 
@@ -376,6 +392,7 @@ def vacuum(wave=None, **keywords):
         wave = np.logspace(-2, 3, 1000)
     ri = RefractiveIndices(wave, np.ones(len(wave), dtype=np.complex))
     return Material("vacuum", rho=0.0, ri=ri, **keywords)
+
 
 def waterice(source='warren08', **keywords):
     """Water ice.

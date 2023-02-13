@@ -1,0 +1,5 @@
+Bohren and Huffman Mie and coated sphere code from Bruce Draine
+https://www.astro.princeton.edu/~draine/scattering.html
+
+bhmie.f
+bhcoat.f

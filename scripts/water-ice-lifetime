@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 import sys
+
 # sys.path.append('/home/msk/local/python/')
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table, Column
-from grains2 import davint, waterice, amcarbon, Bruggeman, SublimationLTE
+from grains2 import waterice, amcarbon, Bruggeman, SublimationLTE
+from grains2.davint import davint
 
 parser = argparse.ArgumentParser()
-parser.add_argument('dirt_fraction', type=float)
-parser.add_argument('radius', type=float, help='μm')
+parser.add_argument("dirt_fraction", type=float)
+parser.add_argument("radius", type=float, help="μm")
 args = parser.parse_args()
 
 
@@ -36,24 +38,29 @@ ice = waterice()
 if args.dirt_fraction > 0:
     r = (1 - args.dirt_fraction, args.dirt_fraction)
     emt = Bruggeman()
-    mix = emt.mix((waterice(), amcarbon()), r,
-                  name=('water ice({:.1%})+amorphous carbon({:.1%})'
-                        .format(*r)))
+    mix = emt.mix(
+        (waterice(), amcarbon()),
+        r,
+        name=("water ice({:.1%})+amorphous carbon({:.1%})".format(*r)),
+    )
     ice.ri = mix.ri  # update n,k but use all other parameters
     ice.name = mix.name
 
-print('dirt_fraction:', args.dirt_fraction)
-print('radius:', args.radius)
+print("dirt_fraction:", args.dirt_fraction)
+print("radius:", args.radius)
 print(ice)
 
-tab = Table([a], names=['a'])
-for rh in np.r_[[1.51, 3.11, 2.55, 2.45], 1.1**np.arange(18)]:
+tab = Table([a], names=["a"])
+for rh in np.r_[[1.51, 3.11, 2.55, 2.45], 1.1 ** np.arange(18)]:
     print(rh)
     tau, tau_sp = lifetime(a, ice, rh)
     plt.plot(np.log10(a), np.log10(tau_sp))
-    print('    {:.4g}'.format(tau_sp[-1]))
-    tab.add_column(Column(tau_sp, 'tau({:.2f}au)'.format(rh)))
+    print("    {:.4g}".format(tau_sp[-1]))
+    tab.add_column(Column(tau_sp, "tau({:.2f}au)".format(rh)))
 
-tab.meta['comments'] = [str(ice)]
-tab.write('lifetime-{}.txt'.format(args.dirt_fraction),
-          format='ascii.fixed_width_two_line', overwrite=True)
+tab.meta["comments"] = [str(ice)]
+tab.write(
+    "lifetime-{}.txt".format(args.dirt_fraction),
+    format="ascii.fixed_width_two_line",
+    overwrite=True,
+)

@@ -3,3 +3,9 @@ dist
 *.egg-info
 *~
 *pyc
+analysis/*fits
+analysis/*eps
+analysis/*ps
+*.so
+.hypothesis
+lifetime*txt

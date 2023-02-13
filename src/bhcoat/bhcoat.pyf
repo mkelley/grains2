@@ -1,0 +1,20 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module bhcoat ! in 
+    interface  ! in :bhcoat
+        subroutine bhcoat(xx,yy,rrfrl1,rrfrl2,qqext,qqsca,qback,gsca) ! in :bhcoat:bhcoat.f
+            real :: xx
+            real :: yy
+            complex :: rrfrl1
+            complex :: rrfrl2
+            real :: qqext
+            real :: qqsca
+            real intent(out) :: qback
+            real intent(out) :: gsca
+        end subroutine bhcoat
+    end interface 
+end python module bhcoat
+
+! This file was auto-generated with f2py (version:1.21.4).
+! See http://cens.ioc.ee/projects/f2py2e/

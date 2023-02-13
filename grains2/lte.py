@@ -10,10 +10,22 @@ SublimationLTE
 
 """
 
+from mskpy.util import autodoc
 import numpy as np
 from numpy import pi
 
+from scipy import optimize
+from scipy.interpolate import splrep, splev
 import astropy.units as u
+
+from mskpy import calib
+from .material import Material
+from .scattering import ScatteringModel, Mie
+from .porosity import PorosityModel, Solid
+from .davint import davint
+
+from mskpy.util import planck
+
 
 __all__ = [
     'PlaneParallelIsotropicLTE',
@@ -62,10 +74,6 @@ class RadiativeLTE(object):
 
     def __init__(self, a, m, scattering=None, porosity=None,
                  S='E490', wave=None, update=True):
-        from mskpy import calib
-        from .material import Material
-        from .scattering import ScatteringModel, Mie
-        from .porosity import PorosityModel, Solid
 
         self.a = np.array(a)
         if self.a.ndim == 0:
@@ -120,9 +128,6 @@ class RadiativeLTE(object):
         solar spec., refractive index, and Qabs.
 
         """
-
-        from scipy.interpolate import splrep, splev
-        from mskpy.util import davint
 
         if wave is None:
             self.wave = np.sort(np.concatenate((Sw, self.m.ri.wave)))
@@ -306,9 +311,6 @@ class RadiativeLTE(object):
     def update(self, T0=20, T1=2000):
         """Find the temperature for each a in LTE."""
 
-        from scipy import optimize
-        from mskpy.util import planck, davint
-
         if self._updated:
             raise ValueError("Solution already up to date.")
 
@@ -407,7 +409,6 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
 
     def _Erad(self, a, Qabs, T):
         """Scalar function."""
-        from mskpy.util import planck, davint
         B = pi * planck(self.wave, T, unit=u.Unit('W/(m2 sr um)')).value
         BQ = davint(self.wave, B * Qabs, self.wave[0], self.wave[-1])
         return 4.0 * pi * (a * 1e-6)**2 * BQ
@@ -457,7 +458,7 @@ class SublimationLTE(RadiativeLTE):
         """Production rate.  [kg/s]"""
         T = self.T if T is None else T
         if (np.size(T) == 1):
-            T = np.ones_like(a) * T
+            T = np.ones_like(self.a) * T
         return 4.0 * pi * (self.a * 1e-6)**2 * self.phi(T)
 
     def Qmps(self, T=None):
@@ -473,8 +474,61 @@ class SublimationLTE(RadiativeLTE):
         T = self.T if T is None else T
         return -1e6 * self.phi(T) / (self.m.rho * 1e3)
 
+    def sputtering(self):
+        """Rate of sputtering from solar wind for pure ice.
+
+        Nominal solar wind, Mukai & Schwem 1981.
+
+
+        Returns
+        -------
+        Z_sp : Quantity
+            Sputtering rate at `self.rh`.
+
+        """
+
+        Z_sp = u.Quantity(1.1e8 * self.r**-2, '1/(s cm2)')
+        return Z_sp
+
+    def lifetime(self, sputtering=True):
+        """Estimate grain lifetimes.
+
+        Sublimation rate is a function of grain size.  Integrating the rate
+        formally produces infinite lifetimes.  Here, the sublimation rate is
+        integrated for all grain sizes, but for the last two sizes
+        (`self.a[:1]`), a linear sublimation rate with time is assumed, which
+        allows for the grain to shrink to size 0.
+
+        Parameters
+        ----------
+        sputtering : bool, optional
+            `False` to exclude solar wind sputtering.
+
+
+        Returns
+        -------
+        tau : Quantity
+            Total lifetime for grains of size `self.a` to decrease down to
+            size 0.
+
+        """
+
+        dtda = self.dadt()**-1
+
+        if sputtering:
+            dtda = (-1e7 * self.m.mu / self.m.rho * self.sputtering().value
+                    + dtda**-1)**-1
+
+        tau = np.zeros(self.a.shape)
+        # davint requires 3 values between integration limits
+        for i in range(2, len(self.a)):
+            tau[i] = davint(self.a, -dtda, self.a[0], self.a[i])
+        tau[1] = (self.a[1] - self.a[0]) * -dtda[0]
+        tau += -self.a[0] * dtda[0]
+
+        return tau * u.s
+
 
 # update module docstring
-from mskpy.util import autodoc
 autodoc(globals())
 del autodoc

@@ -4,8 +4,8 @@
 !f2py real :: yy
 !f2py complex :: rrfrl1
 !f2py complex :: rrfrl2
-!f2py real, intent(out) :: qext
-!f2py real, intent(out) :: qsca
+!f2py real, intent(out) :: qqext
+!f2py real, intent(out) :: qqsca
 !f2py real, intent(out) :: qback
 !f2py real, intent(out) :: gsca
       IMPLICIT NONE

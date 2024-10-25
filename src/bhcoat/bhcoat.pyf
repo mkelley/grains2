@@ -8,8 +8,8 @@ python module bhcoat ! in
             real :: yy
             complex :: rrfrl1
             complex :: rrfrl2
-            real :: qqext
-            real :: qqsca
+            real intent(out) :: qqext
+            real intent(out) :: qqsca
             real intent(out) :: qback
             real intent(out) :: gsca
         end subroutine bhcoat

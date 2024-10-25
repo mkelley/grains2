@@ -17,15 +17,13 @@ scattering --- Scattering models
 import numpy as np
 from numpy import pi
 
-__all__ = [
-    'Mie',
-    'OblateCDE',
-    'ProlateCDE'
-]
+__all__ = ["Mie", "OblateCDE", "ProlateCDE"]
+
 
 def _return_float_or_array(func):
     """Function decorator that returns len 1 arrays as scalars."""
     from functools import wraps
+
     @wraps(func)
     def wrapper(*args, **keywords):
         r = func(*args, **keywords)
@@ -33,7 +31,9 @@ def _return_float_or_array(func):
             return r[0]
         else:
             return r
+
     return wrapper
+
 
 class ScatteringModel(object):
     """A template class for light scattering."""
@@ -234,7 +234,7 @@ class ScatteringModel(object):
 
         k = 2 * pi / w
         Csca = qsca * pi * a**2
-        s11 = (np.abs(s2)**2 + np.abs(s1)**2) / 2
+        s11 = (np.abs(s2) ** 2 + np.abs(s1) ** 2) / 2
         Phi = s11 / k**2 / Csca
 
         return Phi
@@ -286,6 +286,7 @@ class ScatteringModel(object):
         q = np.zeros_like(x)
 
         from .material import RefractiveIndices
+
         if isinstance(ri, RefractiveIndices):
             nk = ri(w)
             if len(shape) == 2:
@@ -300,9 +301,12 @@ class ScatteringModel(object):
             if len(shape) == 2:
                 nk = np.tile(nk, shape[0])
             return x, nk, q, shape
-        raise ValueError("ri should be a RefractiveIndices instance,"
-                         " a single value, or a list of values"
-                         " at each w.")
+        raise ValueError(
+            "ri should be a RefractiveIndices instance,"
+            " a single value, or a list of values"
+            " at each w."
+        )
+
 
 class Mie(ScatteringModel):
     """Mie scattering.
@@ -344,20 +348,27 @@ class Mie(ScatteringModel):
         qext, qback, gsca = np.ones((3,) + qsca.shape)
         s1, s2 = np.zeros((2, qsca.size, 2 * nang - 1), complex)
         Phi = np.zeros((qsca.size, 2 * nang - 1))
-        alpha = np.linspace(0, 180., 2 * nang - 1)
+        alpha = np.linspace(0, 180.0, 2 * nang - 1)
         for i in range(len(x)):
             q = bhmie(x[i], nk[i], nang)
             qsca[i] = q[3]
             qext[i] = q[2]
             qback[i] = q[4]
             gsca[i] = q[5]
-            s1[i] = q[0][:s1.shape[1]]
-            s2[i] = q[1][:s1.shape[1]]
-            #Phi[i] = self.Phi(a[i], w[i], qsca[i], s1[i], s2[i])
+            s1[i] = q[0][: s1.shape[1]]
+            s2[i] = q[1][: s1.shape[1]]
+            # Phi[i] = self.Phi(a[i], w[i], qsca[i], s1[i], s2[i])
 
-        return dict(qsca=qsca, qext=qext, qabs=qext - qsca,
-                    qback=qback, gsca=gsca, s1=s1, s2=s2, #Phi=Phi,
-                    alpha=alpha)
+        return dict(
+            qsca=qsca,
+            qext=qext,
+            qabs=qext - qsca,
+            qback=qback,
+            gsca=gsca,
+            s1=s1,
+            s2=s2,  # Phi=Phi,
+            alpha=alpha,
+        )
 
     @_return_float_or_array
     def qsca(self, a, w, ri):
@@ -523,7 +534,7 @@ class Mie(ScatteringModel):
         nang = 2 if nang < 2 else nang
         s = np.zeros((len(x), 2 * nang - 1))
         for i in range(len(x)):
-            s[i] = bhmie(x[i], nk[i], nang)[0][:s.shape[1]]
+            s[i] = bhmie(x[i], nk[i], nang)[0][: s.shape[1]]
         return s
 
     def s2(self, a, w, ri, nang=23):
@@ -554,8 +565,9 @@ class Mie(ScatteringModel):
         nang = 2 if nang < 2 else nang
         s = np.zeros((len(x), 2 * nang - 1))
         for i in range(len(x)):
-            s[i] = bhmie(x[i], nk[i], nang)[1][:s.shape[1]]
+            s[i] = bhmie(x[i], nk[i], nang)[1][: s.shape[1]]
         return s
+
 
 class OblateCDE(ScatteringModel):
     """CDE oblate ellipsoids aligned along crystallographic axes.
@@ -610,7 +622,7 @@ class OblateCDE(ScatteringModel):
 
         self._L = np.zeros(3)
         if factor == 1:
-            self._L += 1.0 / 3.0 
+            self._L += 1.0 / 3.0
             self._e = 0.0
         else:
             e2 = 1.0 - self._factor**2
@@ -620,7 +632,7 @@ class OblateCDE(ScatteringModel):
             self._e = e
             self._L[0] = g / 2.0 / e2 * (pi / 2.0 - np.arctan(g)) - g2 / 2.0
             self._L[1] = self._L[0]
-            self._L[2] = (1.0 - self._L[0] * 2)
+            self._L[2] = 1.0 - self._L[0] * 2
 
     @property
     def axis(self):
@@ -666,7 +678,7 @@ class OblateCDE(ScatteringModel):
 
         sigma = np.zeros_like(x, dtype=complex)
         for axis in ri.keys():
-            beta = 1.0 / (nk[axis]**2 - 1.0)
+            beta = 1.0 / (nk[axis] ** 2 - 1.0)
             if axis == self.axis:
                 sigma += 1.0 / (beta + self.L[2])
             else:
@@ -674,6 +686,7 @@ class OblateCDE(ScatteringModel):
 
         q = x * 4.0 / 9.0 * np.imag(sigma)
         return q.reshape(shape)
+
 
 class ProlateCDE(ScatteringModel):
     """CDE prolate ellipsoids aligned along crystallographic axes.
@@ -733,8 +746,11 @@ class ProlateCDE(ScatteringModel):
             e2 = 1.0 - 1.0 / self._factor**2
             e = np.sqrt(e2)
             self._e = e
-            self._L[0] = ((1.0 - e2) / e2 *
-                          (np.log((1.0 + e) / (1.0 - e)) / 2.0 / e - 1.0))
+            self._L[0] = (
+                (1.0 - e2)
+                / e2
+                * (np.log((1.0 + e) / (1.0 - e)) / 2.0 / e - 1.0)
+            )
             self._L[1] = (1.0 - self._L[0]) / 2.0
             self._L[2] = self._L[1]
 
@@ -776,12 +792,12 @@ class ProlateCDE(ScatteringModel):
           The absorption efficiency.
 
         """
-        #k = x / av
-        #v = 4.0 / 3.0 * pi * av**3
-        #Cabs = k * v / 3.0 * np.imag(sigma)
-        #q = Cabs / pi / av**2
-        #q = k * v / 3.0 * np.imag(sigma) / pi / av**2
-        #q = x / av * 4.0 / 3.0 * pi * av**3 / 3.0 * np.imag(sigma) / pi / av**2
+        # k = x / av
+        # v = 4.0 / 3.0 * pi * av**3
+        # Cabs = k * v / 3.0 * np.imag(sigma)
+        # q = Cabs / pi / av**2
+        # q = k * v / 3.0 * np.imag(sigma) / pi / av**2
+        # q = x / av * 4.0 / 3.0 * pi * av**3 / 3.0 * np.imag(sigma) / pi / av**2
 
         nk = dict()
         for axis in ri.keys():
@@ -789,7 +805,7 @@ class ProlateCDE(ScatteringModel):
 
         sigma = np.zeros_like(x, dtype=complex)
         for axis in ri.keys():
-            beta = 1.0 / (nk[axis]**2 - 1.0)
+            beta = 1.0 / (nk[axis] ** 2 - 1.0)
             if axis == self.axis:
                 sigma += 1.0 / (beta + self.L[0])
             else:
@@ -798,7 +814,9 @@ class ProlateCDE(ScatteringModel):
         q = x * 4.0 / 9.0 * np.imag(sigma)
         return q.reshape(shape)
 
+
 # update module docstring
 from mskpy.util import autodoc
+
 autodoc(globals())
 del autodoc

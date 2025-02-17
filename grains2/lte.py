@@ -27,10 +27,7 @@ from .davint import davint
 from mskpy.util import planck
 
 
-__all__ = [
-    'PlaneParallelIsotropicLTE',
-    'SublimationLTE'
-]
+__all__ = ["PlaneParallelIsotropicLTE", "SublimationLTE"]
 
 
 class RadiativeLTE(object):
@@ -72,8 +69,9 @@ class RadiativeLTE(object):
     _updated = False
     _updating = False
 
-    def __init__(self, a, m, scattering=None, porosity=None,
-                 S='E490', wave=None, update=True):
+    def __init__(
+        self, a, m, scattering=None, porosity=None, S="E490", wave=None, update=True
+    ):
 
         self.a = np.array(a)
         if self.a.ndim == 0:
@@ -89,26 +87,108 @@ class RadiativeLTE(object):
         assert isinstance(self.porosity, PorosityModel)
 
         if type(S) == str:
-            unit = u.Unit('W/(m2 um)')
-            if S.lower() == 'wehrli':
+            unit = u.Unit("W/(m2 um)")
+            if S.lower() == "wehrli":
                 w, f = np.array(calib.wehrli(smooth=True, unit=unit))[:, :-1]
                 S = (w.to(u.um).value, f.value)
-            elif S.lower() == 'e490':
+            elif S.lower() == "e490":
                 w, f = calib.e490(smooth=True, unit=unit)
                 S = (w.to(u.um).value, f.value)
-            elif S.lower() == 'harker mie idl':
+            elif S.lower() == "harker mie idl":
                 # solar spectrum used by D. Harker, dated 19 Mar 1999
-                temp = [.20, .22, .24, .26, .28, .30, .32, .34, .36, .37, .38, .39, .40,
-                        .41, .42, .43, .44, .45, .46, .48, .50, .55, .60, .65, .70, .75,
-                        .80, .90, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0, 4., 5., 6.,
-                        8., 10., 12.]
+                temp = [
+                    0.20,
+                    0.22,
+                    0.24,
+                    0.26,
+                    0.28,
+                    0.30,
+                    0.32,
+                    0.34,
+                    0.36,
+                    0.37,
+                    0.38,
+                    0.39,
+                    0.40,
+                    0.41,
+                    0.42,
+                    0.43,
+                    0.44,
+                    0.45,
+                    0.46,
+                    0.48,
+                    0.50,
+                    0.55,
+                    0.60,
+                    0.65,
+                    0.70,
+                    0.75,
+                    0.80,
+                    0.90,
+                    1.0,
+                    1.1,
+                    1.2,
+                    1.4,
+                    1.6,
+                    1.8,
+                    2.0,
+                    2.5,
+                    3.0,
+                    4.0,
+                    5.0,
+                    6.0,
+                    8.0,
+                    10.0,
+                    12.0,
+                ]
                 S = np.zeros((2, len(temp)))
                 S[0] = temp
-                temp = [1.2, 4.5, 6.4, 13., 25., 59., 85., 114., 115., 127., 121., 115.,
-                        160., 187., 189., 183., 201., 213., 215., 213., 204., 198., 187.,
-                        167., 149., 129., 114., 90., 74., 61., 50., 33., 22.3, 14.8, 10.2,
-                        4.97, 2.63, .93, .41, .21, .063, .023, .012]
-                S[1] = np.array(temp) * 10.
+                temp = [
+                    1.2,
+                    4.5,
+                    6.4,
+                    13.0,
+                    25.0,
+                    59.0,
+                    85.0,
+                    114.0,
+                    115.0,
+                    127.0,
+                    121.0,
+                    115.0,
+                    160.0,
+                    187.0,
+                    189.0,
+                    183.0,
+                    201.0,
+                    213.0,
+                    215.0,
+                    213.0,
+                    204.0,
+                    198.0,
+                    187.0,
+                    167.0,
+                    149.0,
+                    129.0,
+                    114.0,
+                    90.0,
+                    74.0,
+                    61.0,
+                    50.0,
+                    33.0,
+                    22.3,
+                    14.8,
+                    10.2,
+                    4.97,
+                    2.63,
+                    0.93,
+                    0.41,
+                    0.21,
+                    0.063,
+                    0.023,
+                    0.012,
+                ]
+                S[1] = np.array(temp) * 10.0
                 del temp
             else:
                 raise ValueError("Unknown S: {}".format(S))
@@ -142,7 +222,7 @@ class RadiativeLTE(object):
         self.S = np.zeros_like(self.wave)
         self.S[i] = np.exp(v[i])
 
-        self.R = np.zeros((len(self.a), self.wave.size), np.complex)
+        self.R = np.zeros((len(self.a), self.wave.size), complex)
         self.Qabs = np.zeros((len(self.a), self.wave.size))
         self.Qsca = np.zeros((len(self.a), self.wave.size))
         self.Qext = np.zeros((len(self.a), self.wave.size))
@@ -162,14 +242,14 @@ class RadiativeLTE(object):
             m = self.porosity(self.m, self.a[i])
             Q = self.scattering.q(self.a[i], w, m.ri)
 
-            self.Qabs_orig[i] = Q['qabs']
-            self.Qsca_orig[i] = Q['qsca']
-            self.Qext_orig[i] = Q['qext']
+            self.Qabs_orig[i] = Q["qabs"]
+            self.Qsca_orig[i] = Q["qsca"]
+            self.Qext_orig[i] = Q["qext"]
 
-            j = Q['qabs'] > 0
-            v = splev(np.log(self.wave),
-                      splrep(np.log(w[j]), np.log(Q['qabs'][j])),
-                      ext=1)
+            j = Q["qabs"] > 0
+            v = splev(
+                np.log(self.wave), splrep(np.log(w[j]), np.log(Q["qabs"][j])), ext=1
+            )
             j = v != 0
             self.Qabs[i, j] = np.exp(v[j])
 
@@ -179,10 +259,10 @@ class RadiativeLTE(object):
                 print(self.wave[k])
                 self.Qabs[i, k] = 0
 
-            j = Q['qsca'] > 0
-            v = splev(np.log(self.wave),
-                      splrep(np.log(w[j]), np.log(Q['qsca'][j])),
-                      ext=1)
+            j = Q["qsca"] > 0
+            v = splev(
+                np.log(self.wave), splrep(np.log(w[j]), np.log(Q["qsca"][j])), ext=1
+            )
             j = v != 0
             self.Qsca[i, j] = np.exp(v[j])
 
@@ -192,10 +272,10 @@ class RadiativeLTE(object):
                 print(self.wave[k])
                 self.Qsca[i, k] = 0
 
-            j = Q['qext'] > 0
-            v = splev(np.log(self.wave),
-                      splrep(np.log(w[j]), np.log(Q['qext'][j])),
-                      ext=1)
+            j = Q["qext"] > 0
+            v = splev(
+                np.log(self.wave), splrep(np.log(w[j]), np.log(Q["qext"][j])), ext=1
+            )
             j = v != 0
             self.Qext[i, j] = np.exp(v[j])
 
@@ -206,20 +286,31 @@ class RadiativeLTE(object):
                 self.Qext[i, k] = 0
 
             j = (self.S * self.Qabs[i]) > 0
-            self.SQ[i] = davint(self.wave[j], self.S[j] * self.Qabs[i, j],
-                                self.wave[j][0], self.wave[j][-1])
-            temp = davint(self.wave[j], self.S[j], self.wave[j][0],
-                          self.wave[j][-1])
+            self.SQ[i] = davint(
+                self.wave[j],
+                self.S[j] * self.Qabs[i, j],
+                self.wave[j][0],
+                self.wave[j][-1],
+            )
+            temp = davint(self.wave[j], self.S[j], self.wave[j][0], self.wave[j][-1])
             self.Qabs_bar[i] = self.SQ[i] / temp
 
             j = (self.S * self.Qsca[i]) > 0
-            SQsca[i] = davint(self.wave[j], self.S[j] * self.Qsca[i, j],
-                              self.wave[j][0], self.wave[j][-1])
+            SQsca[i] = davint(
+                self.wave[j],
+                self.S[j] * self.Qsca[i, j],
+                self.wave[j][0],
+                self.wave[j][-1],
+            )
             self.Qsca_bar[i] = SQsca[i] / temp
 
             j = (self.S * self.Qext[i]) > 0
-            SQext[i] = davint(self.wave[j], self.S[j] * self.Qext[i, j],
-                              self.wave[j][0], self.wave[j][-1])
+            SQext[i] = davint(
+                self.wave[j],
+                self.S[j] * self.Qext[i, j],
+                self.wave[j][0],
+                self.wave[j][-1],
+            )
             self.Qext_bar[i] = SQext[i] / temp
 
     @property
@@ -255,7 +346,7 @@ class RadiativeLTE(object):
         """
 
         T = self.T if T is None else T
-        if (np.size(T) == 1):
+        if np.size(T) == 1:
             T = np.ones_like(self.a) * T
 
         E = np.zeros(np.size(self.a))
@@ -282,13 +373,12 @@ class RadiativeLTE(object):
 
         """
         T = self.T if T is None else T
-        if (np.size(T) == 1):
+        if np.size(T) == 1:
             T = np.ones_like(self.a) * T
 
         dE = np.zeros(np.size(self.a))
         for i in range(dE.shape[0]):
-            dE[i] = self._conserveEnergy(self.a[i], self.SQ[i],
-                                         self.Qabs[i], T[i])
+            dE[i] = self._conserveEnergy(self.a[i], self.SQ[i], self.Qabs[i], T[i])
 
         if len(dE) == 1:
             return dE[0]
@@ -320,13 +410,14 @@ class RadiativeLTE(object):
         # solve for each size
         self._T, self.BQ, self.Qrad_bar = np.zeros((3, len(self.a)))
         for i in range(len(self.a)):
-            self._T[i] = optimize.brentq(self._conserveEnergy_brentq,
-                                         T0, T1, args=(i,), xtol=1e-10)
+            self._T[i] = optimize.brentq(
+                self._conserveEnergy_brentq, T0, T1, args=(i,), xtol=1e-10
+            )
             # update Qrad_bar with the solution
-            B = pi * planck(self.wave, self._T[i],
-                            unit=u.Unit('W/(m2 sr um)')).value
-            self.BQ[i] = davint(self.wave, B * self.Qabs[i],
-                                self.wave[0], self.wave[-1])
+            B = pi * planck(self.wave, self._T[i], unit=u.Unit("W/(m2 sr um)")).value
+            self.BQ[i] = davint(
+                self.wave, B * self.Qabs[i], self.wave[0], self.wave[-1]
+            )
             temp = davint(self.wave, B, self.wave[0], self.wave[-1])
             self.Qrad_bar[i] = self.BQ[i] / temp
 
@@ -370,15 +461,23 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
     _updated = False
     _updating = False
 
-    def __init__(self, a, m, r, scattering=None, porosity=None,
-                 S='E490', wave=None, update=True):
+    def __init__(
+        self, a, m, r, scattering=None, porosity=None, S="E490", wave=None, update=True
+    ):
 
         self.r = r
         assert isinstance(self.r, float)
 
-        RadiativeLTE.__init__(self, a, m, scattering=scattering,
-                              porosity=porosity, S=S, wave=wave,
-                              update=update)
+        RadiativeLTE.__init__(
+            self,
+            a,
+            m,
+            scattering=scattering,
+            porosity=porosity,
+            S=S,
+            wave=wave,
+            update=update,
+        )
 
     def _prepareSRQ(self, Sw, Sf, wave=None):
         """Prepare variables for numeric integration.
@@ -396,22 +495,25 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
   Qabs_bar = {}
   T = {}
   Qrad_bar = {}
->""".format(self.m.name, self.r,
-            np.array2string(self.a, 74, prefix='  '),
-            np.array2string(self.Qabs, 71, prefix='  '),
-            np.array2string(self.Qabs_bar, 67, prefix='  '),
-            np.array2string(np.array(self.T), 74, prefix='  '),
-            np.array2string(self.Qrad_bar, 67, prefix='  '))
+>""".format(
+            self.m.name,
+            self.r,
+            np.array2string(self.a, 74, prefix="  "),
+            np.array2string(self.Qabs, 71, prefix="  "),
+            np.array2string(self.Qabs_bar, 67, prefix="  "),
+            np.array2string(np.array(self.T), 74, prefix="  "),
+            np.array2string(self.Qrad_bar, 67, prefix="  "),
+        )
 
     def _Eabs(self, a, SQ):
         """Scalar function."""
-        return pi * (a * 1e-6)**2 * SQ
+        return pi * (a * 1e-6) ** 2 * SQ
 
     def _Erad(self, a, Qabs, T):
         """Scalar function."""
-        B = pi * planck(self.wave, T, unit=u.Unit('W/(m2 sr um)')).value
+        B = pi * planck(self.wave, T, unit=u.Unit("W/(m2 sr um)")).value
         BQ = davint(self.wave, B * Qabs, self.wave[0], self.wave[-1])
-        return 4.0 * pi * (a * 1e-6)**2 * BQ
+        return 4.0 * pi * (a * 1e-6) ** 2 * BQ
 
 
 class SublimationLTE(RadiativeLTE):
@@ -429,8 +531,7 @@ class SublimationLTE(RadiativeLTE):
 
     """
 
-    def __init__(self, *args, radiation=PlaneParallelIsotropicLTE,
-                 **kwargs):
+    def __init__(self, *args, radiation=PlaneParallelIsotropicLTE, **kwargs):
         self.radiation = radiation
         radiation.__init__(self, *args, **kwargs)
 
@@ -444,7 +545,7 @@ class SublimationLTE(RadiativeLTE):
 
     def _Esubl(self, a, T):
         """Scalar function."""
-        return 4.0 * pi * (a * 1e-6)**2 * self.m.H(T) * self.phi(T)
+        return 4.0 * pi * (a * 1e-6) ** 2 * self.m.H(T) * self.phi(T)
 
     def phi(self, T=None):
         """Sublimation rate.  [kg/m2/s]"""
@@ -457,9 +558,9 @@ class SublimationLTE(RadiativeLTE):
     def Q(self, T=None):
         """Production rate.  [kg/s]"""
         T = self.T if T is None else T
-        if (np.size(T) == 1):
+        if np.size(T) == 1:
             T = np.ones_like(self.a) * T
-        return 4.0 * pi * (self.a * 1e-6)**2 * self.phi(T)
+        return 4.0 * pi * (self.a * 1e-6) ** 2 * self.phi(T)
 
     def Qmps(self, T=None):
         """Production rate.  [molec/s]"""
@@ -487,7 +588,7 @@ class SublimationLTE(RadiativeLTE):
 
         """
 
-        Z_sp = u.Quantity(1.1e8 * self.r**-2, '1/(s cm2)')
+        Z_sp = u.Quantity(1.1e8 * self.r**-2, "1/(s cm2)")
         return Z_sp
 
     def lifetime(self, sputtering=True):
@@ -513,11 +614,12 @@ class SublimationLTE(RadiativeLTE):
 
         """
 
-        dtda = self.dadt()**-1
+        dtda = self.dadt() ** -1
 
         if sputtering:
-            dtda = (-1e7 * self.m.mu / self.m.rho * self.sputtering().value
-                    + dtda**-1)**-1
+            dtda = (
+                -1e7 * self.m.mu / self.m.rho * self.sputtering().value + dtda**-1
+            ) ** -1
 
         tau = np.zeros(self.a.shape)
         # davint requires 3 values between integration limits

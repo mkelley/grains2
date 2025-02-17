@@ -34,16 +34,16 @@ import numpy as np
 from pkg_resources import resource_filename
 
 __all__ = [
-    'amcarbon',
-    'amolivine40',
-    'amolivine50',
-    'ampyroxene40',
-    'ampyroxene50',
-    'magnetite',
-    'neutral',
-    'olivine95',
-    'vacuum',
-    'waterice'
+    "amcarbon",
+    "amolivine40",
+    "amolivine50",
+    "ampyroxene40",
+    "ampyroxene50",
+    "magnetite",
+    "neutral",
+    "olivine95",
+    "vacuum",
+    "waterice",
 ]
 
 
@@ -200,7 +200,7 @@ class RefractiveIndices(object):
 
         """
 
-        self.table().write(filename, format='ascii.fixed_width_two_line')
+        self.table().write(filename, format="ascii.fixed_width_two_line")
 
     def table(self):
         """The refractive indices as a table."""
@@ -208,12 +208,12 @@ class RefractiveIndices(object):
         from astropy.table import Table, Column
 
         t = Table()
-        t.add_column(Column(name='wave', data=self.wave))
+        t.add_column(Column(name="wave", data=self.wave))
         if len(self.axes) > 0:
             for k, v in self.axes:
                 t.add_column(Column(name=k, data=v))
         else:
-            t.add_column(Column(name='nk', data=self.nk))
+            t.add_column(Column(name="nk", data=self.nk))
 
         return t
 
@@ -235,14 +235,15 @@ def load_refractive_indices(filename):
     RefractiveIndices
     """
     from astropy.io import ascii
-    t = ascii.read(filename, format='fixed_width_two_line')
+
+    t = ascii.read(filename, format="fixed_width_two_line")
     if len(t.colnames) == 2:
-        return RefractiveIndices(t['wave'].data, t['nk'].data)
+        return RefractiveIndices(t["wave"].data, t["nk"].data)
     else:
         axes = dict()
         for k in t.colnames[1:]:
             axes[k] = t[k].data
-        return RefractiveIndices(t['wave'].data, axes)
+        return RefractiveIndices(t["wave"].data, axes)
 
 
 class Material(object):
@@ -268,11 +269,11 @@ class Material(object):
 
     def __init__(self, name, **keywords):
         self.name = name
-        self.rho = keywords.get('rho')
-        self.ri = keywords.get('ri')
-        self.mu = keywords.get('mu')
-        self.Pv = keywords.get('Pv', lambda T: None)
-        self.H = keywords.get('H', lambda T: None)
+        self.rho = keywords.get("rho")
+        self.ri = keywords.get("ri")
+        self.mu = keywords.get("mu")
+        self.Pv = keywords.get("Pv", lambda T: None)
+        self.H = keywords.get("H", lambda T: None)
 
     def __repr__(self):
         return "<grains.materials.Material [{}]>".format(self.name)
@@ -280,41 +281,39 @@ class Material(object):
 
 def amcarbon(**keywords):
     """Amorphous carbon."""
-    fn = resource_filename('grains2', os.path.join('data', 'am-carbon.dat'))
+    fn = resource_filename("grains2", os.path.join("data", "am-carbon.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous carbon", rho=1.5, ri=ri, **keywords)
 
 
 def amolivine40(**keywords):
-    """"Amorphous" olivine with Mg/Fe = 40/60."""
-    fn = resource_filename('grains2', os.path.join('data', 'olivine-mg40.dat'))
+    """ "Amorphous" olivine with Mg/Fe = 40/60."""
+    fn = resource_filename("grains2", os.path.join("data", "olivine-mg40.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous olivine 40/60", rho=3.3, ri=ri, **keywords)
 
 
 def amolivine50(**keywords):
-    """"Amorphous" olivine with Mg/Fe = 50/50."""
-    fn = resource_filename('grains2', os.path.join('data', 'olivine-mg50.dat'))
+    """ "Amorphous" olivine with Mg/Fe = 50/50."""
+    fn = resource_filename("grains2", os.path.join("data", "olivine-mg50.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous olivine 50/50", rho=3.3, ri=ri, **keywords)
 
 
 def ampyroxene40(**keywords):
-    """"Amorphous" pyroxene with Mg/Fe = 40/60."""
-    fn = resource_filename(
-        'grains2', os.path.join('data', 'pyroxene-mg40.dat'))
+    """ "Amorphous" pyroxene with Mg/Fe = 40/60."""
+    fn = resource_filename("grains2", os.path.join("data", "pyroxene-mg40.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous pyroxene 40/60", rho=3.3, ri=ri, **keywords)
 
 
 def ampyroxene50(**keywords):
-    """"Amorphous" pyroxene with Mg/Fe = 50/50."""
-    fn = resource_filename(
-        'grains2', os.path.join('data', 'pyroxene-mg50.dat'))
+    """ "Amorphous" pyroxene with Mg/Fe = 50/50."""
+    fn = resource_filename("grains2", os.path.join("data", "pyroxene-mg50.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
     return Material("amorphous pyroxene 50/50", rho=3.3, ri=ri, **keywords)
@@ -322,7 +321,7 @@ def ampyroxene50(**keywords):
 
 def magnetite(**keywords):
     """Magnetite, Fe3O4."""
-    fn = resource_filename('grains2', os.path.join('data', 'magnetite.dat'))
+    fn = resource_filename("grains2", os.path.join("data", "magnetite.dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("magnetite", ri=ri, **keywords)
@@ -330,7 +329,7 @@ def magnetite(**keywords):
 
 def wustite(**keywords):
     """Wüstite, Fe3O4."""
-    fn = resource_filename('grains2', os.path.join('data', 'fe100o.txt'))
+    fn = resource_filename("grains2", os.path.join("data", "fe100o.txt"))
     x = np.loadtxt(fn, skiprows=4).T
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("Wüstite", ri=ri, **keywords)
@@ -338,7 +337,7 @@ def wustite(**keywords):
 
 def ferropericlase50(**keywords):
     """Ferropericlase Mg_0.5 Fe_0.5 O."""
-    fn = resource_filename('grains2', os.path.join('data', 'fe50o.txt'))
+    fn = resource_filename("grains2", os.path.join("data", "fe50o.txt"))
     x = np.loadtxt(fn, skiprows=4).T
     ri = RefractiveIndices(x[:, 0], x[:, 1] + 1j * x[:, 2])
     return Material("ferropericlase 50", ri=ri, **keywords)
@@ -363,16 +362,19 @@ def neutral(nk, wave=None, **keywords):
 
 def olivine95(**keywords):
     """Olivine with Mg/Fe = 95/5 (Mg_1.9 Fe_0.1 SiO_4)."""
-    fn = resource_filename('grains2', os.path.join('data', 'oliv_vis.txt'))
+    fn = resource_filename("grains2", os.path.join("data", "oliv_vis.txt"))
     vis = np.loadtxt(fn).T
 
     nk = dict()
-    for i in 'xyz':
+    for i in "xyz":
         fn = resource_filename(
-            'grains2', os.path.join('data', 'oliv_nk_{}.txt'.format(i)))
+            "grains2", os.path.join("data", "oliv_nk_{}.txt".format(i))
+        )
         ir = np.loadtxt(fn).T
-        nk[i] = (np.r_[vis[1][1:][::-1], ir[1][1:][::-1]] +
-                 np.r_[vis[2][1:][::-1], ir[2][1:][::-1]] * 1j)
+        nk[i] = (
+            np.r_[vis[1][1:][::-1], ir[1][1:][::-1]]
+            + np.r_[vis[2][1:][::-1], ir[2][1:][::-1]] * 1j
+        )
 
     w = 1e4 / np.r_[vis[0][1:][::-1], ir[0][1:][::-1]]
     ri = RefractiveIndices(w, nk)
@@ -390,11 +392,11 @@ def vacuum(wave=None, **keywords):
     """
     if wave is None:
         wave = np.logspace(-2, 3, 1000)
-    ri = RefractiveIndices(wave, np.ones(len(wave), dtype=np.complex))
+    ri = RefractiveIndices(wave, np.ones(len(wave), dtype=complex))
     return Material("vacuum", rho=0.0, ri=ri, **keywords)
 
 
-def waterice(source='warren08', **keywords):
+def waterice(source="warren08", **keywords):
     """Water ice.
 
     Latent heat of sublimation from Delsemme & Miller 1971.  Vapor
@@ -409,13 +411,13 @@ def waterice(source='warren08', **keywords):
 
     """
 
-    fn = resource_filename('grains2', os.path.join('data', source + '.dat'))
+    fn = resource_filename("grains2", os.path.join("data", source + ".dat"))
     x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])
 
     def H(T):
         """Latent heat of sublimation (Delsemme & Miller 1971). [J/kg]"""
-        return 2.888e6 - 1116. * T
+        return 2.888e6 - 1116.0 * T
 
     def Pv(T):
         """Vapor pressure (Lichtenegger & Komle 1991). [N/m2]"""
@@ -425,5 +427,6 @@ def waterice(source='warren08', **keywords):
         mu = 18 * 1.66e-27  # molecular mass, kg
         return Pr * np.exp(mu * H(T) / kB * (1.0 / Tr - 1.0 / T))
 
-    return Material("water ice", rho=1.0, ri=ri, Pv=Pv, H=H,
-                    mu=18 * 1.66e-27, **keywords)
+    return Material(
+        "water ice", rho=1.0, ri=ri, Pv=Pv, H=H, mu=18 * 1.66e-27, **keywords
+    )

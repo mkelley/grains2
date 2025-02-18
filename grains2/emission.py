@@ -11,8 +11,18 @@ Harker07
 """
 
 import numpy as np
+from numpy import pi
+from scipy.interpolate import splrep, splev
+import astropy.units as u
+from mskpy.util import planck, minmax
+
 from .lte import PlaneParallelIsotropicLTE
-from .material import Material
+from . import material as mat
+from .scattering import ScatteringModel, Mie, ProlateCDE
+from .porosity import Solid
+from .gsd import GSD
+from .davint import davint
+
 
 __all__ = ["Coma", "CometDust", "Harker07"]
 
@@ -23,9 +33,10 @@ class Coma(dict):
     Parameters
     ----------
     delta : Quantity, optional
-      The observer-coma distance.
+        The observer-coma distance.
+
     **kwargs :
-      `CometDust` components.
+        ``CometDust`` components.
 
     Example
     -------
@@ -38,8 +49,6 @@ class Coma(dict):
     """
 
     def __init__(self, dust=(), delta=1.0):
-        import astropy.units as u
-
         for d in dust:
             self.append(d)
 
@@ -63,9 +72,6 @@ class Coma(dict):
         dict of ndarrays
 
         """
-
-        import astropy.units as u
-
         wave = u.Quantity(wave, u.um)
         f = dict()
         for k, v in self.items():
@@ -118,9 +124,6 @@ class CometDust(PlaneParallelIsotropicLTE):
         tscale=1.0,
         **kwargs
     ):
-        from .scattering import ScatteringModel
-        from .gsd import GSD
-
         self.spec_model = spec_model
         if self.spec_model is not None:
             assert isinstance(self.spec_model, ScatteringModel)
@@ -183,11 +186,6 @@ class CometDust(PlaneParallelIsotropicLTE):
 
         """
 
-        from numpy import pi
-        from scipy.interpolate import splrep, splev
-        import astropy.units as u
-        from mskpy.util import planck, davint
-
         w = u.Quantity(wave, u.um).value
         w = np.array(w) if np.iterable(w) else np.array([w])
         unit = u.Unit(unit)
@@ -243,10 +241,6 @@ class Harker07(Coma):
     def __init__(
         self, rh, delta, gsd, porosity, arange=[0.1, 100], arange_cryst=[0.1, 1.0]
     ):
-        import astropy.units as u
-        from mskpy import minmax
-        from . import material as m
-
         print("WARNING: Ortho-pyroxene not yet implemented.")
 
         self._rh = u.Quantity(rh, u.au)
@@ -260,10 +254,6 @@ class Harker07(Coma):
         self._load_dust()
 
     def _load_dust(self):
-        from . import material as m
-        from .scattering import Mie, ProlateCDE
-        from .porosity import Solid
-
         x = np.log10(self.arange)
         a = np.logspace(x[0], x[1], x.ptp() * 20)
         print("Loading amorphous components")
@@ -271,7 +261,7 @@ class Harker07(Coma):
         self["ac"] = CometDust(
             self.rh.value,
             a,
-            m.amcarbon(),
+            mat.amcarbon(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -280,7 +270,7 @@ class Harker07(Coma):
         self["ao"] = CometDust(
             self.rh.value,
             a,
-            m.amolivine50(),
+            mat.amolivine50(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -289,7 +279,7 @@ class Harker07(Coma):
         self["ap"] = CometDust(
             self.rh.value,
             a,
-            m.ampyroxene50(),
+            mat.ampyroxene50(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -302,7 +292,7 @@ class Harker07(Coma):
         self["co"] = CometDust(
             self.rh.value,
             a,
-            m.olivine95(),
+            mat.olivine95(),
             self.gsd,
             porosity=Solid(),
             scattering=Mie(),

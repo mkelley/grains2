@@ -14,15 +14,18 @@ scattering --- Scattering models
 
 """
 
+from abc import ABC, abstractmethod
+from functools import wraps
 import numpy as np
 from numpy import pi
+from .bhmie import bhmie
+from .material import RefractiveIndices
 
 __all__ = ["Mie", "OblateCDE", "ProlateCDE"]
 
 
 def _return_float_or_array(func):
     """Function decorator that returns len 1 arrays as scalars."""
-    from functools import wraps
 
     @wraps(func)
     def wrapper(*args, **keywords):
@@ -35,200 +38,261 @@ def _return_float_or_array(func):
     return wrapper
 
 
-class ScatteringModel(object):
-    """A template class for light scattering."""
+def _not_implemented(func):
+
+    def wrapper(*args, **keywords):
+        raise NotImplementedError(f"{func.__name__} is not implemented for this model.")
+
+    return wrapper
+
+
+class ScatteringModel(ABC):
+    """Base class for light scattering.
+
+    Several functions may be defined, but none are specifically required in
+    order to support models which cannot calculate some values.
+
+
+    """
 
     def __init__(self):
         pass
 
+    @_not_implemented
     def q(self, a, w, ri):
         """Scattering properties.
+
 
         Parameters
         ----------
         a : float or array
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or array
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or array
-          Refractive index of the material.
+            Refractive index of the material.
 
         Returns
         -------
         q : dictionary
-          All scattering properties as a dictionary: qsca, qext, qabs,
-          qback, gsca, s1, s2, Phi.
+            All scattering properties as a dictionary: qsca, qext, qabs, qback,
+            gsca, s1, s2, Phi.
 
         """
         pass
 
+    @_not_implemented
     def qsca(self, a, w, ri):
         """Light scattering efficiency.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or array
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         qsca : float
-          The scattering efficiency.
+            The scattering efficiency.
 
         """
         pass
 
+    @_not_implemented
     def qext(self, a, w, ri):
         """Extinction efficiency.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         qext : float
-          The extinction efficiency.
+            The extinction efficiency.
 
         """
         pass
 
+    @_not_implemented
     def qabs(self, a, w, ri):
         """Absorption efficiency.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         qabs : float
-          The absorption efficiency.
+            The absorption efficiency.
 
         """
         pass
 
+    @_not_implemented
     def qback(self, a, w, ri):
         """Back scattering efficiency.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         qback : float
-          Back scattering efficiency.
+            Back scattering efficiency.
 
         """
         pass
 
+    @_not_implemented
     def gsca(self, a, w, ri):
         """Mean scattering angle (<cos(th)>).
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         gsca : float
-          <cos(th)>.
+            <cos(th)>.
 
         """
         pass
 
+    @_not_implemented
     def s1(self, a, w, ri):
         """Scattering of light perpendicular to the scattering plane.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         s1 : ndarray
-          Diagonal elements of the scattering matrix for E
-          perpendicular incident light.
+            Diagonal elements of the scattering matrix for E perpendicular
+            incident light.
+
         th : ndarray
-          Angles for `s1`.
+            Angles for ``s1``.
 
         """
         pass
 
+    @_not_implemented
     def s2(self, a, w, ri):
         """Scattering of light parallel to the scattering plane.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
 
         Returns
         -------
         s2 : ndarray
-          Diagonal elements of the scattering matrix for E parallel
-          incident light.
+            Diagonal elements of the scattering matrix for E parallel incident
+            light.
+
         th : ndarray
-          Angles for `s2`.
+            Angles for ``s2``.
 
         """
         pass
 
+    @_not_implemented
     def Phi(self, a, w, qsca, s1, s2):
         """Phase function.
 
-        Angles are a function of the scattering angle `alpha`.
+        Angles are a function of the scattering angle ``alpha``.
+
 
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         qsca : float or ndarray
-          Scattering efficiency.
+            Scattering efficiency.
+
         s1, s2 : float or ndarray
-          Scattering elements for E perp. and E para.  Set to `0j` to
-          disable that component.
+            Scattering elements for E perp. and E para.  Set to `0j` to disable
+            that component.
+
 
         Returns
         -------
         Phi : ndarray
-          Phase function.
+            Phase function.
 
         """
 
@@ -244,30 +308,36 @@ class ScatteringModel(object):
 
         1) Compute x = 2 pi a / w:
 
-          If a is an array of len N, and w is of len M, return NxM x
-          for each combination of a and w.
+            If a is an array of len N, and w is of len M, return NxM x for each
+            combination of a and w.
 
-          Otherwise, return an x with shape max(len(a), len(x))
+            Otherwise, return an x with shape max(len(a), len(x))
 
         2) Compute nk:
 
-          If ri is a RefractiveIndices instance, it will be interpolated onto
-          w.
+            If ri is a RefractiveIndices instance, it will be interpolated onto
+            w.
 
-          If ri is a single value, it will be repeated for all x.
+            If ri is a single value, it will be repeated for all x.
 
-          If ri is an array of length N, it is assumed each
-          element corresponds to each w.
+            If ri is an array of length N, it is assumed each element
+            corresponds to each w.
+
 
         Returns
         -------
         x : ndarray
+            Size parameters (does not account for imaginary index).
+
         nk : ndarray
+            Refractive indices.
+
         q : ndarray
-          q will have the same number of elements as x.
+            q will have the same number of elements as x.
+
         shape : tuple
-          q will need to be reshaped to this shape in order to follow
-          the above rules.
+            q will need to be reshaped to this shape in order to follow the
+            above rules.
 
         """
 
@@ -284,8 +354,6 @@ class ScatteringModel(object):
         x = x.flatten()
 
         q = np.zeros_like(x)
-
-        from .material import RefractiveIndices
 
         if isinstance(ri, RefractiveIndices):
             nk = ri(w)
@@ -318,33 +386,35 @@ class Mie(ScatteringModel):
     def q(self, a, w, ri, nang=90):
         """Scattering properties.
 
+
         Parameters
         ----------
         a : float or array
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or array
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or array
-          Refractive index of the material.
+            Refractive index of the material.
+
         nang : int
-          Number of angles to compute for s1, s2 between 0 and 90 deg.
-          bhmie will calculate `2 * nang - 1` directions from 0 to 180
-          deg.  For example, `nang=2` yields `theta=[0, 90, 180]`.
+            Number of angles to compute for s1, s2 between 0 and 90 deg.
+            ``bhmie`` will calculate ``2 * nang - 1`` directions from 0 to 180
+            deg.  For example, ``nang=2`` yields ``theta=[0, 90, 180]``.
+
 
         Returns
         -------
         q : dictionary
-          All scattering properties as a dictionary: qsca, qext, qabs,
-          qback, gsca, s1, s2, Phi.  Also, `alpha`, the scattering
-          angles for s1, s2, etc.
+            All scattering properties as a dictionary: qsca, qext, qabs, qback,
+            gsca, s1, s2, Phi.  Also, `alpha`, the scattering angles for s1, s2,
+            etc.
 
         """
 
-        from .bhmie import bhmie
-
         nang = 2 if nang < 2 else nang
         x, nk, qsca, shape = self._processInput(a, w, ri)
-        w = 2 * np.pi * a / x
         qext, qback, gsca = np.ones((3,) + qsca.shape)
         s1, s2 = np.zeros((2, qsca.size, 2 * nang - 1), complex)
         Phi = np.zeros((qsca.size, 2 * nang - 1))
@@ -372,26 +442,6 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qsca(self, a, w, ri):
-        """Light scattering efficiency.
-
-        Parameters
-        ----------
-        a : float or ndarray
-          Grain size.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        qsca : float
-          The scattering efficiency.
-
-        """
-
-        from .bhmie import bhmie
-
         x, nk, q, shape = self._processInput(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[3]
@@ -399,26 +449,6 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qext(self, a, w, ri):
-        """Extinction efficiency.
-
-        Parameters
-        ----------
-        a : float or ndarray
-          Grain size.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        qext : float
-          The extinction efficiency.
-
-        """
-
-        from .bhmie import bhmie
-
         x, nk, q, shape = self._processInput(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[2]
@@ -426,26 +456,6 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qabs(self, a, w, ri):
-        """Absorption efficiency.
-
-        Parameters
-        ----------
-        a : float or ndarray
-          Grain size.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        qabs : float
-          The absorption efficiency.
-
-        """
-
-        from .bhmie import bhmie
-
         x, nk, q, shape = self._processInput(a, w, ri)
         for i in range(len(x)):
             r = bhmie(x[i], nk[i], 1)
@@ -454,26 +464,6 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qback(self, a, w, ri):
-        """Back scattering efficiency.
-
-        Parameters
-        ----------
-        a : float or ndarray
-          Grain size.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        qback : float
-          Back scattering efficiency.
-
-        """
-
-        from .bhmie import bhmie
-
         x, nk, q, shape = self._processInput(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[4]
@@ -481,26 +471,6 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def gsca(self, a, w, ri):
-        """Mean scattering angle (<cos(th)>).
-
-        Parameters
-        ----------
-        a : float or ndarray
-          Grain size.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        gsca : float
-          <cos(th)>.
-
-        """
-
-        from .bhmie import bhmie
-
         x, nk, g, shape = self._processInput(a, w, ri)
         for i in range(len(x)):
             g[i] = bhmie(x[i], nk[i], 1)[5]
@@ -509,27 +479,29 @@ class Mie(ScatteringModel):
     def s1(self, a, w, ri, nang=23):
         """Scattering matrix for light perpendicular to the scattering plane.
 
+
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
         nang : int
-          Number of angles to compute, from 0 to 90 degrees.
+            Number of angles to compute, from 0 to 90 degrees.
+
 
         Returns
         -------
         s1 : ndarray
-          Diagonals of the scattering matrix, each has length of
-          ``nang`` * 2 - 1.
+            Diagonals of the scattering matrix, each has length of ``nang * 2 -
+            1``.
 
         """
-
-        from .bhmie import bhmie
-
         x, nk = self._processInput(a, w, ri)[:2]
         nang = 2 if nang < 2 else nang
         s = np.zeros((len(x), 2 * nang - 1))
@@ -543,23 +515,25 @@ class Mie(ScatteringModel):
         Parameters
         ----------
         a : float or ndarray
-          Grain size.  [micron]
+            Grain size.  [micron]
+
         w : float or ndarray
-          Wavelength of scattered light.  [micron]
+            Wavelength of scattered light.  [micron]
+
         ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
+            Refractive index of the material.
+
         nang : int
-          Number of angles to compute, from 0 to 90 degrees.
+            Number of angles to compute, from 0 to 90 degrees.
+
 
         Returns
         -------
         s2 : ndarray
-          Diagonals of the scattering matrix, each has length of
-          ``nang`` * 2 - 1.
+            Diagonals of the scattering matrix, each has length of ``nang * 2 -
+            1``.
 
         """
-
-        from .bhmie import bhmie
 
         x, nk = self._processInput(a, w, ri)[:2]
         nang = 2 if nang < 2 else nang
@@ -574,41 +548,50 @@ class OblateCDE(ScatteringModel):
 
     Refractive indices should be specified for three axes.
 
+
     Parameters
     ----------
     axis : string
-      The name of the elongated axis.
+        The name of the elongated axis.
+
     factor : float
-      The relative scale factor of the elongation along ``axis``.  The
-      other axes will have a scale factor of 1.  These factors are
-      used as a, b, and c, in the above equations.
+        The relative scale factor of the elongation along ``axis``.  The other
+        axes will have a scale factor of 1.  These factors are used as a, b, and
+        c, in the above equations.
+
 
     Attributes
     ----------
     axis : float, read-only
+
     factor : float, read-only
+
     L : ndarray, read-only
+
     e : float, read-only
+
 
     Notes
     -----
 
-    A continuous distribution of a ramdomly oriented collection of
-    identical homogeneous ellipsoids (Borhen and Huffman 1983, p354):
+    A continuous distribution of a ramdomly oriented collection of identical
+    homogeneous ellipsoids (Borhen and Huffman 1983, p354):
 
-      <Cabs> = k * v / 3 * imag(sum(1 / (beta + L[i])))
-      beta = 1 / (nk**2 - 1)
-      v = volume = 4 / 3 * pi * a * b * c
+        <Cabs> = k * v / 3 * imag(sum(1 / (beta + L[i])))
+
+        beta = 1 / (nk**2 - 1)
+
+        v = volume = 4 / 3 * pi * a * b * c
 
     ``a``, ``b``, and ``c`` are the semi-major axes of the ellipsoid.
 
     Oblates (Borhen and Huffman 1983, p 146):
 
-      L[0] = g(e) / 2.0 / e**2 * (pi / 2.0 - arctan(g(e))) - g(e)**2 / 2.0
-      L[1] = L[0]
-      L[2] = (1.0 - L[0] * 2)
-      g(e) = sqrt((1.0 - e**2) / e**2)
-      e**2 = 1.0 - c**2 / a**2
+        L[0] = g(e) / 2.0 / e**2 * (pi / 2.0 - arctan(g(e))) - g(e)**2 / 2.0
+
+        L[1] = L[0] L[2] = (1.0 - L[0] * 2) g(e) = sqrt((1.0 - e**2) / e**2)
+
+        e**2 = 1.0 - c**2 / a**2
 
     ``c`` is the shortened axis.
 
@@ -655,23 +638,6 @@ class OblateCDE(ScatteringModel):
         return self._e
 
     def qabs(self, av, w, ri):
-        """Absorption efficiency.
-
-        Parameters
-        ----------
-        av : float or ndarray
-          Grain equivalent volume radius.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices, complex, or ndarray
-          Refractive index of the material.
-
-        Returns
-        -------
-        qabs : float
-          The absorption efficiency.
-
-        """
         nk = dict()
         for axis in ri.keys():
             x, nk[axis], q, shape = self._processInput(av, w, ri[axis])
@@ -693,40 +659,51 @@ class ProlateCDE(ScatteringModel):
 
     Refractive indices should be specified for three axes.
 
+
     Parameters
     ----------
     axis : string
-      The name of the elongated axis.
+        The name of the elongated axis.
+
     factor : float
-      The relative scale factor of the elongation along ``axis``.  The
-      other axes will have a scale factor of 1.  These factors are
-      used as a, b, and c, in the above equations.
+        The relative scale factor of the elongation along ``axis``.  The other
+        axes will have a scale factor of 1.  These factors are used as a, b, and
+        c, in the above equations.
+
 
     Attributes
     ----------
     axis : float, read-only
+
     factor : float, read-only
+
     L : ndarray, read-only
-    e : float, read-only
+
+    e : float, read-
+
 
     Notes
     -----
 
-    A continuous distribution of a ramdomly oriented collection of
-    identical homogeneous ellipsoids (Borhen and Huffman 1983, p354):
+    A continuous distribution of a ramdomly oriented collection of identical
+    homogeneous ellipsoids (Borhen and Huffman 1983, p354):
 
-      <Cabs> = k * v / 3 * imag(sum(1 / (beta + L[i])))
-      beta = 1 / (nk**2 - 1)
-      v = volume = 4 / 3 * pi * a * b * c
+        <Cabs> = k * v / 3 * imag(sum(1 / (beta + L[i])))
+
+        beta = 1 / (nk**2 - 1)
+
+        v = volume = 4 / 3 * pi * a * b * c
 
     ``a``, ``b``, and ``c`` are the semi-major axes of the ellipsoid.
 
     Prolates (Borhen and Huffman 1983, p146):
 
-      L[0] = (1.0 - e**2) / e**2 * (-1.0 + 1.0 / 2.0 / e *
-                                    log((1 + e) / (1.0 - e)))
-      L[1] = L[2] = (1.0 - L[0]) / 2.0
-      e**2 = 1.0 - b**2 / a**2
+        L[0] = (1.0 - e**2) / e**2 * (-1.0 + 1.0 / 2.0 / e *
+                                      log((1 + e) / (1.0 - e)))
+
+        L[1] = L[2] = (1.0 - L[0]) / 2.0
+
+        e**2 = 1.0 - b**2 / a**2
 
     ``a`` is the elongated axis.
 
@@ -747,9 +724,7 @@ class ProlateCDE(ScatteringModel):
             e = np.sqrt(e2)
             self._e = e
             self._L[0] = (
-                (1.0 - e2)
-                / e2
-                * (np.log((1.0 + e) / (1.0 - e)) / 2.0 / e - 1.0)
+                (1.0 - e2) / e2 * (np.log((1.0 + e) / (1.0 - e)) / 2.0 / e - 1.0)
             )
             self._L[1] = (1.0 - self._L[0]) / 2.0
             self._L[2] = self._L[1]
@@ -775,23 +750,6 @@ class ProlateCDE(ScatteringModel):
         return self._e
 
     def qabs(self, av, w, ri):
-        """Absorption efficiency.
-
-        Parameters
-        ----------
-        av : float or ndarray
-          Grain equivalent volume radius.  [micron]
-        w : float or ndarray
-          Wavelength of scattered light.  [micron]
-        ri : RefractiveIndices
-          Refractive index of the material.  Must be anisotropic.
-
-        Returns
-        -------
-        qabs : float
-          The absorption efficiency.
-
-        """
         # k = x / av
         # v = 4.0 / 3.0 * pi * av**3
         # Cabs = k * v / 3.0 * np.imag(sigma)

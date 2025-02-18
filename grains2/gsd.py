@@ -81,20 +81,20 @@ class Hanner(GSD):
     Parameters
     ----------
     a0 : float
-        Minimum grain radius.  Same units as `a`.
+        Minimum grain radius.  Same units as ``a``.
 
     N : float
-        GSD for large grains (`a >> ap`) is `a**-N`.
+        GSD for large grains (``a >> ap``) is ``a**-N``.
 
     M : float, optional
-        `ap = a0 * (M + N) / N`.  One of `M` or `ap` must be provided.
+        ``ap = a0 * (M + N) / N``.  One of ``M`` or ``ap`` must be provided.
 
     ap : float, optional
-        Peak grain radius.  One of `M` or `ap` must be provided.  Same units as
-        `a`.
+        Peak grain radius.  One of ``M` or ``ap`` must be provided.  Same units
+        as ``a``.
 
     Np : float, optional
-        Number of grains with radius `ap`.
+        Number of grains with radius ``ap``.
 
     """
 
@@ -134,14 +134,15 @@ class Hansen(GSD):
     Used extensively in Hansen and Travis (1974).
 
     n(a) = constant a**((1 - 3 a_var) / a_var) exp(-a / (a_eff a_var))
-      a_eff = mean effective radius
-      a_var = relative effective radius variance, 0 <= a_var < 0.5
 
-    The mean effective radius is the mean radius weighed by particle
-    area.
+        a_eff = mean effective radius
 
-    The effective skewness is `2 * sqrt(a_var)`.  For small `a_var`,
-    the distribution is strongly peaked at `a_eff`.
+        a_var = relative effective radius variance, 0 <= a_var < 0.5
+
+    The mean effective radius is the mean radius weighed by particle area.
+
+    The effective skewness is ``2 * sqrt(a_var)``.  For small ``a_var``, the
+    distribution is strongly peaked at ``a_eff``.
 
     Hansen 1971, J. Atmospheric Sci. 28, 1400.
 
@@ -210,18 +211,22 @@ class Hansen(GSD):
 class Normal(GSD):
     """Normal distribution.
 
+
     Parameters
     ----------
     mu : float
-      Mean grain radius.
+        Mean grain radius.
+
     sigma : float
-      Variance about the mean.
+        Variance about the mean.
+
     Np : float, optional
-      Number of grains with radius `mu`.  Only one of `Np` or `N` can
-      be specified.
+        Number of grains with radius `mu`.  Only one of `Np` or `N` can
+        be specified.
+
     N : float, optional
-      Total number of grains.  Only one of `Np` or `N` can be
-      specified.
+        Total number of grains.  Only one of `Np` or `N` can be
+        specified.
 
     """
 
@@ -257,14 +262,17 @@ class Normal(GSD):
 class PowerLaw(GSD):
     """Power law grain size distribution.
 
+
     Parameters
     ----------
     N : float
-      Power-law slope.
+        Power-law slope.
+
     a0 : float, optional
-      Normalization grain radius.
+        Normalization grain radius.
+
     N0 : float, optional
-      Number of grains with radius `a0`.
+        Number of grains with radius `a0`.
 
     """
 
@@ -278,7 +286,7 @@ class PowerLaw(GSD):
 
 
 def hanner_gsd(a, a0, N, M=None, ap=None, Np=1.0):
-    """Hanner modified power law differential grain size distribution.
+    """Evaluate the Hanner modified power law differential grain size distribution.
 
     n(a) = Np * (1 - a0 / a)**M * (a0 / a)**N
 
@@ -289,20 +297,20 @@ def hanner_gsd(a, a0, N, M=None, ap=None, Np=1.0):
         Grain radius.
 
     a0 : float
-        Minimum grain radius.  Same units as `a`.
+        Minimum grain radius.  Same units as ``a``.
 
     N : float
-        GSD for large grains (`a >> ap`) is `a**-N`.
+        GSD for large grains (``a >> ap``) is ``a**-N``.
 
     M : float, optional
-        `ap = a0 * (M + N) / N`.  One of `M` or `ap` must be provided.
+        ``ap = a0 * (M + N) / N``.  One of ``M`` or ``ap`` must be provided.
 
     ap : float, optional
-        Peak grain radius.  One of `M` or `ap` must be provided.  Same units as
-        `a`
+        Peak grain radius.  One of ``M`` or ``ap`` must be provided.  Same units
+        as ``a``
 
     Np : float, optional
-        Number of grains with radius `ap`.
+        Number of grains with radius ``ap``.
 
 
     Returns
@@ -324,32 +332,37 @@ def hanner_gsd(a, a0, N, M=None, ap=None, Np=1.0):
 
 
 def hansen_gsd(a, a_eff, a_var, N=1.0):
-    """Hansen modified gamma distribution.
+    """Evaluate a Hansen modified gamma distribution.
 
     Used extensively in Hansen and Travis (1974).
 
     n(a) = constant a**((1 - 3 a_var) / a_var) exp(-a / (a_eff a_var))
-      a_eff = effective radius
-      a_var = relative effective radius variance, 0 <= a_var < 0.5
 
-    The mean effective radius is the mean radius weighed by particle
-    area.
+        a_eff = effective radius
 
-    The effective skewness is `2 * sqrt(a_var)`.  For small `a_var`,
-    the distribution is strongly peaked at `a_eff`.
+        a_var = relative effective radius variance, 0 <= a_var < 0.5
+
+    The mean effective radius is the mean radius weighed by particle area.
+
+    The effective skewness is ``2 * sqrt(a_var)``.  For small ``a_var``, the
+    distribution is strongly peaked at ``a_eff``.
 
     Hansen 1971, J. Atmospheric Sci. 28, 1400.
+
 
     Parameters
     ----------
     a : float or array
-      Grain radius.
+        Grain radius.
+
     a_eff : float
-      Mean effective grain radius.  Same units as `a`.
+        Mean effective grain radius.  Same units as `a`.
+
     a_var : float
-      Relative effective radius variance.
+        Relative effective radius variance.
+
     N : float, optional
-      Total number of grains.
+        Total number of grains.
 
     """
 
@@ -366,20 +379,25 @@ def hansen_gsd(a, a_eff, a_var, N=1.0):
 
 
 def powerlaw_gsd(a, N, a0=1.0, N0=1.0):
-    """Power law differential grain size distribution.
+    """Evaluate a power law differential grain size distribution.
 
     n(a) = N0 * (a/a0)**N
+
 
     Parameters
     ----------
     a : float or array
-      Grain radius.
+        Grain radius.
+
     N : float
-      Power-law slope.
+        Power-law slope.
+
     a0 : float
-      GSD normalization radius.  Same units as `a`.
+        GSD normalization radius.  Same units as ``a``.
+
     N0 : float, optional
-      Number of grains with radius `a0`.
+        Number of grains with radius ``a0``.
+
 
     Returns
     -------

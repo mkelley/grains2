@@ -11,8 +11,18 @@ Harker07
 """
 
 import numpy as np
+from numpy import pi
+from scipy.interpolate import splrep, splev
+import astropy.units as u
+from mskpy.util import planck, minmax
+
 from .lte import PlaneParallelIsotropicLTE
-from .material import Material
+from . import material as mat
+from .scattering import ScatteringModel, Mie, ProlateCDE
+from .porosity import Solid
+from .gsd import GSD
+from .davint import davint
+
 
 __all__ = ["Coma", "CometDust", "Harker07"]
 
@@ -23,9 +33,10 @@ class Coma(dict):
     Parameters
     ----------
     delta : Quantity, optional
-      The observer-coma distance.
+        The observer-coma distance.
+
     **kwargs :
-      `CometDust` components.
+        ``CometDust`` components.
 
     Example
     -------
@@ -38,8 +49,6 @@ class Coma(dict):
     """
 
     def __init__(self, dust=(), delta=1.0):
-        import astropy.units as u
-
         for d in dust:
             self.append(d)
 
@@ -51,21 +60,21 @@ class Coma(dict):
         The dust is weighted by the grain size distribution and the
         total flux density returned.
 
+
         Parameters
         ----------
         wave : Quantity
-          Wavelengths at which to compute thermal emission.
+            Wavelengths at which to compute thermal emission.
+
         unit : astropy Unit, optional
-          Output flux density units.
+            Output flux density units.
+
 
         Returns
         -------
         dict of ndarrays
 
         """
-
-        import astropy.units as u
-
         wave = u.Quantity(wave, u.um)
         f = dict()
         for k, v in self.items():
@@ -79,30 +88,40 @@ class Coma(dict):
 class CometDust(PlaneParallelIsotropicLTE):
     """A comet coma in LTE with solar insolation.
 
+
     Parameters
     ----------
     rh : float
-      The distance to the Sun. [AU]
+        The distance to the Sun. [AU]
+
     a : float or array
-      Grain radii.  [micron]
+        Grain radii.  [micron]
+
     m : Material
-      Grain material.
+        Grain material.
+
     gsd : GSD, optional
-      Grain size distribution or `None`.  If `None`, `fluxd()` will
-      return fluxes for each size `a`.
+        Grain size distribution or ``None``.  If ``None``, ``fluxd()`` will return
+        fluxes for each size ``a``.
+
     porosity : PorosityModel, optional
-      Grain porosity model.
+        Grain porosity model.
+
     scattering : ScatteringModel, optional
-      Light scattering model with which to compute LTE.
+        Light scattering model with which to compute LTE.
+
     spec_model : ScatteringModel, optional
-      Light scattering model with which to compute emission spectrum,
-      or `None` to use `scattering`.
+        Light scattering model with which to compute emission spectrum, or
+        ``None`` to use ``scattering``.
+
     tscale : float
-      Scale grain equilibrium temperatures by this factor before
-      computing thermal emission.
+        Scale grain equilibrium temperatures by this factor before computing
+        thermal emission.
+
     **kwargs
-      Any `PlaneParallelIsotropicLTE` keyword, e.g., `S`, `wave`,
-      `update`.
+        Any ``PlaneParallelIsotropicLTE`` keyword, e.g., ``S``, ``wave``,
+        ``update``.
+
 
     """
 
@@ -118,9 +137,6 @@ class CometDust(PlaneParallelIsotropicLTE):
         tscale=1.0,
         **kwargs
     ):
-        from .scattering import ScatteringModel
-        from .gsd import GSD
-
         self.spec_model = spec_model
         if self.spec_model is not None:
             assert isinstance(self.spec_model, ScatteringModel)
@@ -162,31 +178,31 @@ class CometDust(PlaneParallelIsotropicLTE):
     def fluxd(self, delta, wave, unit="W/(m2 um)", sum=True):
         """Compute thermal emission spectrum from this dust.
 
-        The if `gsd` is not `None`, the dust is weighted by the grain
-        size distribution and the total is returned.
+        The if `gsd` is not `None`, the dust is weighted by the grain size
+        distribution and the total is returned.
+
 
         Parameters
         ----------
         delta : Quantity
-          Distance to comet.
+            Distance to comet.
+
         wave : Quantity
-          Wavelengths at which to compute thermal emission.
+            Wavelengths at which to compute thermal emission.
+
         unit : astropy Unit, optional
-          Output flux density units.
+            Output flux density units.
+
         sum : bool, optional
-          Set to `False` to return each grain's spectrum, unweighted
-          by the grain size distribution.
+            Set to ``False`` to return each grain's spectrum, unweighted by the
+            grain size distribution.
+
 
         Returns
         -------
         ndarray
 
         """
-
-        from numpy import pi
-        from scipy.interpolate import splrep, splev
-        import astropy.units as u
-        from mskpy.util import planck, davint
 
         w = u.Quantity(wave, u.um).value
         w = np.array(w) if np.iterable(w) else np.array([w])
@@ -223,18 +239,23 @@ class Harker07(Coma):
     Parameters
     ----------
     rh : Quantity
-      Comet heliocentric distance.
+        Comet heliocentric distance.
+
     delta : Quanitity
-      Comet-observer distance
+        Comet-observer distance.
+
     gsd : GSD
-      A single grain size distribution for all dust components.
+        A single grain size distribution for all dust components.
+
     porosity : PorosityModel
-      A single porosity model for all amorphous dust components.
-      Crystalline silicates are always solid.
+        A single porosity model for all amorphous dust components. Crystalline
+        silicates are always solid.
+
     arange : Quantity, optional
-      Limit grain sizes to `min(arange)`, `max(arange)`.
+        Limit grain sizes to ``min(arange)``, ``max(arange)``.
+
     arange_cryst : Quantity, optional
-      Limit crystalline grain sizes to this range.
+        Limit crystalline grain sizes to this range.
 
     """
 
@@ -243,10 +264,6 @@ class Harker07(Coma):
     def __init__(
         self, rh, delta, gsd, porosity, arange=[0.1, 100], arange_cryst=[0.1, 1.0]
     ):
-        import astropy.units as u
-        from mskpy import minmax
-        from . import material as m
-
         print("WARNING: Ortho-pyroxene not yet implemented.")
 
         self._rh = u.Quantity(rh, u.au)
@@ -260,10 +277,6 @@ class Harker07(Coma):
         self._load_dust()
 
     def _load_dust(self):
-        from . import material as m
-        from .scattering import Mie, ProlateCDE
-        from .porosity import Solid
-
         x = np.log10(self.arange)
         a = np.logspace(x[0], x[1], x.ptp() * 20)
         print("Loading amorphous components")
@@ -271,7 +284,7 @@ class Harker07(Coma):
         self["ac"] = CometDust(
             self.rh.value,
             a,
-            m.amcarbon(),
+            mat.amcarbon(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -280,7 +293,7 @@ class Harker07(Coma):
         self["ao"] = CometDust(
             self.rh.value,
             a,
-            m.amolivine50(),
+            mat.amolivine50(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -289,7 +302,7 @@ class Harker07(Coma):
         self["ap"] = CometDust(
             self.rh.value,
             a,
-            m.ampyroxene50(),
+            mat.ampyroxene50(),
             self.gsd,
             porosity=self.porosity,
             scattering=Mie(),
@@ -302,7 +315,7 @@ class Harker07(Coma):
         self["co"] = CometDust(
             self.rh.value,
             a,
-            m.olivine95(),
+            mat.olivine95(),
             self.gsd,
             porosity=Solid(),
             scattering=Mie(),

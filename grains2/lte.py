@@ -10,32 +10,32 @@ SublimationLTE
 
 """
 
-from mskpy.util import autodoc
+from abc import ABC, abstractmethod
 import numpy as np
 from numpy import pi
-
 from scipy import optimize
 from scipy.interpolate import splrep, splev
-import astropy.units as u
 
+import astropy.units as u
 from mskpy import calib
+from mskpy.util import planck
+from mskpy.util import autodoc
+
 from .material import Material
 from .scattering import ScatteringModel, Mie
 from .porosity import PorosityModel, Solid
 from .davint import davint
 
-from mskpy.util import planck
-
 
 __all__ = ["PlaneParallelIsotropicLTE", "SublimationLTE"]
 
 
-class RadiativeLTE(object):
+class RadiativeLTE(ABC):
     """Abstract base class for grains in radiative LTE.
 
-    The names of inhereting classes should specifiy the geometry of
-    the problem in two parts: the geometry of the incident radiation
-    followed by the geometry of the emitted radiation.
+    The names of inheriting classes should specify the geometry of the problem
+    in two parts: the geometry of the incident radiation followed by the
+    geometry of the emitted radiation.
 
     Grain radius and material must be the first two arguments for
     initialization.
@@ -43,35 +43,42 @@ class RadiativeLTE(object):
     Parameters
     ----------
     a : float or array
-      Grain radii.
+        Grain radii.
+
     m : Material
-      The grain material.
+        The grain material.
+
     scattering : ScatteringModel, optional
-      Light scattering model with which to compute LTE.
+        Light scattering model with which to compute LTE.
+
     S : array or string, optional
-      2xN array specifying the wavelengths and flux densities of the
-      incident radiation, or one of the following strings (case
-      in-sensitive):
-        'Wehrli' : Wehrli 1985 solar spectrum at 1 AU (smoothed)
-        'E490' : E490 solar spectrum at 1 AU (smoothed)
-      [μm, W/m2/μm]
+        2xN array specifying the wavelengths and flux densities of the incident
+        radiation [μm, W/m2/μm], or one of the following strings (case
+        in-sensitive):
+
+            * "Wehrli": Wehrli 1985 solar spectrum at 1 AU (smoothed)
+
+            * "E490": E490 solar spectrum at 1 AU (smoothed)
+
+            * "harker mie idl": the spectrum used in the Harker et al. papers.
+
     wave : ndarray, optional
-      Use these specific wavelengths when computing Qabs, temperature,
-      etc.  If set to None, `RadiativeLTE` will concatenate the
-      wavelengths from `S` with the wavelengths from
-      `m.relref().wave`.
+        Use these specific wavelengths when computing Qabs, temperature, etc. If
+        set to None, ``RadiativeLTE`` will concatenate the wavelengths from
+        ``S`` with the wavelengths from ``m.relref().wave``.
+
     update : bool, optional
-      Set to True to update on intialization.
+        Set to True to update on initialization.
 
     """
-
-    _T = np.array([0])
-    _updated = False
-    _updating = False
 
     def __init__(
         self, a, m, scattering=None, porosity=None, S="E490", wave=None, update=True
     ):
+
+        self._T = np.array([0])
+        self._updated = False
+        self._updating = False
 
         self.a = np.array(a)
         if self.a.ndim == 0:
@@ -333,15 +340,17 @@ class RadiativeLTE(object):
     def Erad(self, T=None):
         """Radiated energy at temperature T.
 
-        Paramters
-        ---------
+
+        Parameters
+        ----------
         T : ndarray or float
-          If a float, 1 temperature will be used for all a.  [K]
+            If a float, 1 temperature will be used for all a.  [K]
+
 
         Returns
         -------
         E : ndarray or float
-          Radiated energy. [W]
+            Radiated energy. [W]
 
         """
 
@@ -358,18 +367,38 @@ class RadiativeLTE(object):
         else:
             return E
 
+    @abstractmethod
+    def _Eabs(self, a, SQ):
+        """Energy absorbed.
+
+        Scalar function.
+
+        """
+        pass
+
+    @abstractmethod
+    def _Erad(self, a, Qabs, T):
+        """Energy radiated.
+
+        Scalar function.
+
+        """
+        pass
+
     def dE(self, T=None):
         """Difference between E_abs and E_em at temperature T.
 
-        Paramters
-        ---------
+
+        Parameters
+        ----------
         T : ndarray or float
-          If a float, 1 temperature will be used for all a.  [K]
+            If a float, 1 temperature will be used for all a.  [K]
+
 
         Returns
         -------
         dE : ndarray or float
-          Energy absorbed - energey lost. [W]
+            Energy absorbed - energy lost. [W]
 
         """
         T = self.T if T is None else T
@@ -431,45 +460,47 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
     Parameters
     ----------
     a : float or array
-      Grain radii.
+        Grain radii.
+
     m : Material
-      The grain material.
+        The grain material.
+
     r : float
-      Relavtive distance to the radiation source, i.e., scale `S` by
-      `1/r**2`.  Typically, `S` will be solar flux at 1 AU, and `r`
-      will be heliocentric distance in AU.
+        Relavtive distance to the radiation source, i.e., scale ``S`` by
+        ``1/r**2``.  Typically, ``S`` will be solar flux at 1 AU, and ``r`` will
+        be heliocentric distance in AU.
+
     scattering : ScatteringModel, optional
-      Light scattering model with which to compute LTE.
+        Light scattering model with which to compute LTE.
+
     S : array or string, optional
-      2xN array specifying the wavelengths and flux densities of the
-      incident radiation, or one of the following strings (case
-      in-sensitive):
-        'Wehrli' : Wehrli 1985 solar spectrum at 1 AU (smoothed)
-        'E490' : E490 solar spectrum at 1 AU (smoothed)
-      [micron, W/m2/micron]
+        2xN array specifying the wavelengths and flux densities of the incident
+        radiation [μm, W/m2/μm], or one of the following strings (case
+        in-sensitive):
+
+            * "Wehrli": Wehrli 1985 solar spectrum at 1 AU (smoothed)
+
+            * "E490": E490 solar spectrum at 1 AU (smoothed)
+
+            * "harker mie idl": the spectrum used in the Harker et al. papers.
+
     wave : ndarray, optional
-      Use these specific wavelengths when computing Qabs, temperature,
-      etc.  If set to None, `RadiativeLTE` will concatenate the
-      wavelengths from `S` with the wavelengths from
-      `m.relref().wave`.
+        Use these specific wavelengths when computing Qabs, temperature, etc. If
+        set to None, ``RadiativeLTE`` will concatenate the wavelengths from
+        ``S`` with the wavelengths from ``m.relref().wave``.
+
     update : bool, optional
-      Set to True to update on intialization.
+        Set to True to update on initialization.
 
     """
-
-    _T = np.array([0])
-    _updated = False
-    _updating = False
 
     def __init__(
         self, a, m, r, scattering=None, porosity=None, S="E490", wave=None, update=True
     ):
-
         self.r = r
         assert isinstance(self.r, float)
 
-        RadiativeLTE.__init__(
-            self,
+        super().__init__(
             a,
             m,
             scattering=scattering,
@@ -478,14 +509,6 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
             wave=wave,
             update=update,
         )
-
-    def _prepareSRQ(self, Sw, Sf, wave=None):
-        """Prepare variables for numeric integration.
-
-        solar spec., refractive index, and Qabs.
-
-        """
-        RadiativeLTE._prepareSRQ(self, Sw, Sf, wave=wave)
 
     def __repr__(self):
         return """<PlaneParallelIsotropicLTE for {} grains
@@ -506,11 +529,9 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
         )
 
     def _Eabs(self, a, SQ):
-        """Scalar function."""
         return pi * (a * 1e-6) ** 2 * SQ
 
     def _Erad(self, a, Qabs, T):
-        """Scalar function."""
         B = pi * planck(self.wave, T, unit=u.Unit("W/(m2 sr um)")).value
         BQ = davint(self.wave, B * Qabs, self.wave[0], self.wave[-1])
         return 4.0 * pi * (a * 1e-6) ** 2 * BQ
@@ -519,15 +540,18 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
 class SublimationLTE(RadiativeLTE):
     """Sublimating grain in vacuum and radiation.
 
+
     Parameters
     ----------
     *args
-      Arguments for `radiation`.  For sublimation, the grain material
-      must have `Pv`, `H`, `rho`, and `mu` defined.
+        Arguments for ``radiation``.  For sublimation, the grain material must
+        have ``Pv``, ``H``, ``rho``, and ``mu`` defined.
+
     radiation : RadiativeLTE class, optional
-      The radiation environment.
+        The radiation environment.
+
     **kwargs
-      Any keyword arguments for `radiation`.
+        Any keyword arguments for `radiation`.
 
     """
 
@@ -536,11 +560,9 @@ class SublimationLTE(RadiativeLTE):
         radiation.__init__(self, *args, **kwargs)
 
     def _Eabs(self, a, SQ):
-        """Scalar function."""
         return self.radiation._Eabs(self, a, SQ)
 
     def _Erad(self, a, Qabs, T):
-        """Scalar function."""
         return self.radiation._Erad(self, a, Qabs, T) + self._Esubl(a, T)
 
     def _Esubl(self, a, T):
@@ -584,7 +606,7 @@ class SublimationLTE(RadiativeLTE):
         Returns
         -------
         Z_sp : Quantity
-            Sputtering rate at `self.rh`.
+            Sputtering rate at ``self.rh``.
 
         """
 
@@ -597,19 +619,20 @@ class SublimationLTE(RadiativeLTE):
         Sublimation rate is a function of grain size.  Integrating the rate
         formally produces infinite lifetimes.  Here, the sublimation rate is
         integrated for all grain sizes, but for the last two sizes
-        (`self.a[:1]`), a linear sublimation rate with time is assumed, which
+        (``self.a[:1]``), a linear sublimation rate with time is assumed, which
         allows for the grain to shrink to size 0.
+
 
         Parameters
         ----------
         sputtering : bool, optional
-            `False` to exclude solar wind sputtering.
+            ``False`` to exclude solar wind sputtering.
 
 
         Returns
         -------
         tau : Quantity
-            Total lifetime for grains of size `self.a` to decrease down to
+            Total lifetime for grains of size ``self.a`` to decrease down to
             size 0.
 
         """

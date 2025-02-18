@@ -4,8 +4,18 @@ description = "Dust and ice grain models, especially for solar system comets"
 readme = "README.md"
 authors = [{ name = "Michael S. P. Kelley", email = "msk@astro.umd.edu" }]
 license = { text = "MIT" }
-dependencies = ["numpy<2", "astropy>=6.0"]
+requires-python = ">=3.9,<3.12"
+dependencies = [
+    "numpy<2",
+    "astropy>=6.0",
+    "matplotlib>=3.8",
+    "mskpy>=3.0",
+    "scipy>=1.13",
+]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+docs = ["sphinx-astropy>=1.3"]
 
 [project.urls]
 homepage = "https://github.com/mkelley/grains2"

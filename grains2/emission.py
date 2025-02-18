@@ -14,11 +14,8 @@ import numpy as np
 from .lte import PlaneParallelIsotropicLTE
 from .material import Material
 
-__all__ = [
-    'Coma',
-    'CometDust',
-    'Harker07'
-]
+__all__ = ["Coma", "CometDust", "Harker07"]
+
 
 class Coma(dict):
     """A collection of `CometDust`s.
@@ -48,7 +45,7 @@ class Coma(dict):
 
         self.delta = u.Quantity(delta, u.au)
 
-    def fluxd(self, wave, unit='W/(m2 um)'):
+    def fluxd(self, wave, unit="W/(m2 um)"):
         """Compute thermal emission spectrum from this coma.
 
         The dust is weighted by the grain size distribution and the
@@ -77,6 +74,7 @@ class Coma(dict):
 
     def update(self, gsd=None):
         pass
+
 
 class CometDust(PlaneParallelIsotropicLTE):
     """A comet coma in LTE with solar insolation.
@@ -108,8 +106,18 @@ class CometDust(PlaneParallelIsotropicLTE):
 
     """
 
-    def __init__(self, rh, a, m, gsd=None, porosity=None, scattering=None,
-                 spec_model=None, tscale=1.0, **kwargs):
+    def __init__(
+        self,
+        rh,
+        a,
+        m,
+        gsd=None,
+        porosity=None,
+        scattering=None,
+        spec_model=None,
+        tscale=1.0,
+        **kwargs
+    ):
         from .scattering import ScatteringModel
         from .gsd import GSD
 
@@ -118,7 +126,8 @@ class CometDust(PlaneParallelIsotropicLTE):
             assert isinstance(self.spec_model, ScatteringModel)
 
         PlaneParallelIsotropicLTE.__init__(
-            self, rh, a, m, scattering=scattering, porosity=porosity)
+            self, rh, a, m, scattering=scattering, porosity=porosity
+        )
 
         self.gsd = gsd
         if self.gsd is not None:
@@ -135,19 +144,22 @@ class CometDust(PlaneParallelIsotropicLTE):
   Qabs_spec = {}
   T = {}
   Qrad_bar = {}
->""".format(self.m.name, self.rh,
-            np.array2string(self.a, 74, prefix='  '),
-            np.array2string(self.Qabs, 71, prefix='  '),
-            np.array2string(self.Qabs_bar, 67, prefix='  '),
-            np.array2string(self.Qabs_spec, 67, prefix='  '),
-            np.array2string(np.array(self.T), 74, prefix='  '),
-            np.array2string(self.Qrad_bar, 67, prefix='  '))
+>""".format(
+            self.m.name,
+            self.rh,
+            np.array2string(self.a, 74, prefix="  "),
+            np.array2string(self.Qabs, 71, prefix="  "),
+            np.array2string(self.Qabs_bar, 67, prefix="  "),
+            np.array2string(self.Qabs_spec, 67, prefix="  "),
+            np.array2string(np.array(self.T), 74, prefix="  "),
+            np.array2string(self.Qrad_bar, 67, prefix="  "),
+        )
 
     @property
     def rh(self):
         return self.r
 
-    def fluxd(self, delta, wave, unit='W/(m2 um)', sum=True):
+    def fluxd(self, delta, wave, unit="W/(m2 um)", sum=True):
         """Compute thermal emission spectrum from this dust.
 
         The if `gsd` is not `None`, the dust is weighted by the grain
@@ -181,20 +193,20 @@ class CometDust(PlaneParallelIsotropicLTE):
         unit = u.Unit(unit)
 
         assert self._updated, "Temperature not up to date."
-        D2 = delta.to(u.um).value**2
+        D2 = delta.to(u.um).value ** 2
         f = np.ones((len(self.a), len(w))) * unit
         for i in range(len(self.a)):
             B = planck(w, self.T[i] * self.tscale, unit=unit / u.sr)
             Qabs = splev(w, splrep(self.wave, self.Qabs_spec[i]), ext=1)
-            f[i] = B * pi * u.sr * self.a[i]**2 * Qabs / D2
+            f[i] = B * pi * u.sr * self.a[i] ** 2 * Qabs / D2
 
         if not sum or self.gsd is None:
             return f
-        
+
         if len(self.a) == 1:
-            F = (self.gsd.n(self.a) * f)[0]
+            F = (self.gsd.dnda(self.a) * f)[0]
         else:
-            F = davint(self.a, self.gsd.n(self.a) * f.T, self.a[0], self.a[-1])
+            F = davint(self.a, self.gsd.dnda(self.a) * f.T, self.a[0], self.a[-1])
         return F
 
     def update(self, **keywords):
@@ -203,6 +215,7 @@ class CometDust(PlaneParallelIsotropicLTE):
             self.Qabs_spec = self.spec_model.qabs(self.a, self.wave, self.m.ri)
         else:
             self.Qabs_spec = self.Qabs
+
 
 class Harker07(Coma):
     """Comet coma based on Harker et al. 2007.
@@ -227,13 +240,14 @@ class Harker07(Coma):
 
     _num_per_decade = 20
 
-    def __init__(self, rh, delta, gsd, porosity, arange=[0.1, 100],
-                 arange_cryst=[0.1, 1.0]):
+    def __init__(
+        self, rh, delta, gsd, porosity, arange=[0.1, 100], arange_cryst=[0.1, 1.0]
+    ):
         import astropy.units as u
         from mskpy import minmax
         from . import material as m
 
-        print('WARNING: Ortho-pyroxene not yet implemented.')
+        print("WARNING: Ortho-pyroxene not yet implemented.")
 
         self._rh = u.Quantity(rh, u.au)
         self._delta = u.Quantity(delta, u.au)
@@ -254,26 +268,47 @@ class Harker07(Coma):
         a = np.logspace(x[0], x[1], x.ptp() * 20)
         print("Loading amorphous components")
         print("  - carbon")
-        self['ac'] = CometDust(self.rh.value, a, m.amcarbon(), self.gsd,
-                               porosity=self.porosity,
-                               scattering=Mie())
+        self["ac"] = CometDust(
+            self.rh.value,
+            a,
+            m.amcarbon(),
+            self.gsd,
+            porosity=self.porosity,
+            scattering=Mie(),
+        )
         print("  - olivine")
-        self['ao'] = CometDust(self.rh.value, a, m.amolivine50(), self.gsd,
-                               porosity=self.porosity,
-                               scattering=Mie())
+        self["ao"] = CometDust(
+            self.rh.value,
+            a,
+            m.amolivine50(),
+            self.gsd,
+            porosity=self.porosity,
+            scattering=Mie(),
+        )
         print("  - pyroxene")
-        self['ap'] = CometDust(self.rh.value, a, m.ampyroxene50(), self.gsd,
-                               porosity=self.porosity,
-                               scattering=Mie())
-        
+        self["ap"] = CometDust(
+            self.rh.value,
+            a,
+            m.ampyroxene50(),
+            self.gsd,
+            porosity=self.porosity,
+            scattering=Mie(),
+        )
+
         x = np.log10(self.arange_cryst)
         a = np.logspace(x[0], x[1], x.ptp() * self._num_per_decade)
         print("Loading crystalline components")
         print("  - Mg-rich olivine")
-        self['co'] = CometDust(self.rh.value, a, m.olivine95(), self.gsd,
-                               porosity=Solid(), scattering=Mie(),
-                               spec_model=ProlateCDE('z', 10),
-                               tscale=1.9)
+        self["co"] = CometDust(
+            self.rh.value,
+            a,
+            m.olivine95(),
+            self.gsd,
+            porosity=Solid(),
+            scattering=Mie(),
+            spec_model=ProlateCDE("z", 10),
+            tscale=1.9,
+        )
 
     @property
     def arange(self):
@@ -316,63 +351,57 @@ class Harker07(Coma):
         update_amorphous = False
         update_crystals = False
 
-        delta = kwargs.pop('delta', None)
+        delta = kwargs.pop("delta", None)
         if delta is not None:
             self.delta = u.Quantity(delta, u.au).value
 
-        arange = kwargs.pop('arange', None)
+        arange = kwargs.pop("arange", None)
         if arange is not None:
             update_amorphous = True
             x = np.log10(self.arange)
             a = np.logspace(x[0], x[1], x.ptp() * self._num_per_decade)
-            for k in ['ac', 'ao', 'ap']:
+            for k in ["ac", "ao", "ap"]:
                 self[k].a = a
 
-        arange_cryst = kwargs.pop('arange_cryst', None)
+        arange_cryst = kwargs.pop("arange_cryst", None)
         if arange_cryst is not None:
             update_crystals = True
             x = np.log10(self.arange_cryst)
             a = np.logspace(x[0], x[1], x.ptp() * self._num_per_decade)
-            for k in ['co']:
+            for k in ["co"]:
                 self[k].a = a
 
-        porosity = kwargs.pop('porosity', None)
+        porosity = kwargs.pop("porosity", None)
         if porosity is not None:
             update_amorphous = True
-            for k in ['ac', 'ao', 'ap']:
+            for k in ["ac", "ao", "ap"]:
                 self[k].porosity = porosity
 
-        rh = kwargs.pop('rh', None)
+        rh = kwargs.pop("rh", None)
         if rh is not None:
             update_amorphous = True
             update_crystals = True
-            for k in ['ac', 'ao', 'ap', 'co']:
+            for k in ["ac", "ao", "ap", "co"]:
                 self[k].r = rh
-            
-        gsd = kwargs.pop('gsd', None)
+
+        gsd = kwargs.pop("gsd", None)
         if gsd is not None:
-            for k in ['ac', 'ao', 'ap', 'co']:
+            for k in ["ac", "ao", "ap", "co"]:
                 self[k].gsd = gsd
-            
+
         if update_amorphous:
             print("Updating amorphous dust")
-            for k in ['ac', 'ao', 'ap']:
+            for k in ["ac", "ao", "ap"]:
                 self[k].update()
-            
+
         if update_crystals:
             print("Updating crystalline dust")
-            for k in ['co']:
+            for k in ["co"]:
                 self[k].update()
+
 
 # update module docstring
 from mskpy.util import autodoc
+
 autodoc(globals())
 del autodoc
-
-
-
-
-
-
-
-

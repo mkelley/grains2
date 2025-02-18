@@ -47,59 +47,48 @@ __all__ = [
 ]
 
 
-class RefractiveIndices(object):
+class RefractiveIndices:
     """Refractive index.
 
-    Usage::
-      ri = RefractiveIndices(wave, nk)
 
     Parameters
     ----------
     wave : ndarray
-      The wavelengths. [micron]
+        The wavelengths. [micron]
+
     nk : complex ndarray, or dictionary
-      The indices of refraction.  May be a dictionary of N-element
-      arrays to specify different axes for anisotripic materials (see
-      Examples).
+        The indices of refraction.  May be a dictionary of N-element arrays to
+        specify different axes for anisotripic materials (see Examples).
 
     Attributes
     ----------
     wave : array
-      The wavelengths. [micron]
+        The wavelengths. [micron]
+
     nk : array
-      The complex indices of refraction.
+        The complex indices of refraction.
+
     n : array
-      The real part of nk.
+        The real part of nk.
+
     k : array
-      The imaginary part of nk.
+        The imaginary part of nk.
 
-    Methods
-    --------
-    callable self : returns `nk` at wavelength `w`, possibly through
-      interpolation.
-
-    copy : Return a copy of self.
-    items : The names and indices of each axis, if available.
-    keys : The names of each axis, if available.
-    save : Save to a file.
-    table : The indices as a table.
-    values : The indices of each axis, if available.
 
     Examples
     --------
     Anisotripic materials can be specified, but attributes
-    (``RefractiveIndices.n``) will return the mean of all axes.
-    Individual axes can be returned by indexing the
-    ``RefractiveIndices`` object:
+    (``RefractiveIndices.n``) will return the mean of all axes. Individual axes
+    can be returned by indexing the ``RefractiveIndices`` object:
 
-      from grains import RefractiveIndices as RI
-      w = np.linspace(0.3, 0.6)
-      nk = np.ones((3, len(w)), complex)
-      nk[1] *= 1.22
-      nk[2] *= 1.5 + 0.01j
-      ri = RI(w, dict(x=nk[0], y=nk[1], z=nk[2]))
-      print(ri.n)
-      print(ri['z'].n)
+    >>> from grains2 import RefractiveIndices as RI
+    >>> w = np.linspace(0.3, 0.6)
+    >>> nk = np.ones((3, len(w)), complex)
+    >>> nk[1] *= 1.22
+    >>> nk[2] *= 1.5 + 0.01j
+    >>> ri = RI(w, dict(x=nk[0], y=nk[1], z=nk[2]))
+    >>> print(ri.n)
+    >>> print(ri['z'].n)
 
     """
 
@@ -130,17 +119,20 @@ class RefractiveIndices(object):
     def __call__(self, wave, log=True):
         """Interpolate nk onto new wavelengths.
 
+
         Parameters
         ----------
         wave : array or Quantity
-          The requested wavelengths.
+            The requested wavelengths.
+
         log : bool, optional
-          Set to True to interpolate `k` in logspace.
+            Set to True to interpolate ``k`` in logspace.
+
 
         Returns
         -------
         nk : array
-          The interpolated values, or 0 if not defined at `wave`.
+            The interpolated values, or 0 if not defined at ``wave``.
 
         """
 
@@ -193,10 +185,11 @@ class RefractiveIndices(object):
     def save(self, filename):
         """Save refractive indices to a file.
 
+
         Parameters
         ----------
         filename : string
-          The name of the file.
+            The name of the file.
 
         """
 
@@ -225,14 +218,17 @@ class RefractiveIndices(object):
 def load_refractive_indices(filename):
     """Load a saved set of refractive indices.
 
+
     Parameter
     ---------
     filename : string
-      The name of the file.
+        The name of the file.
+
 
     Returns
     -------
     RefractiveIndices
+
     """
     from astropy.io import ascii
 
@@ -252,18 +248,22 @@ class Material(object):
     Parameters
     ----------
     name : string
-      A string name of the material.
+        A string name of the material.
+
     rho : float, optional
-      The bulk density.  [g/cm3]
+        The bulk density.  [g/cm3]
+
     ri : RefractiveIndices, optional
-      The refractive indices.
+        The refractive indices.
+
     mu : float, optional
-      The mass of one molecule (relevant for ices). [kg]
+        The mass of one molecule (relevant for ices). [kg]
+
     Pv : function, optional
-      Vapor pressure at temperature ``T`` in K: Pv(T).  [N/m2]
+        Vapor pressure at temperature ``T`` in K: Pv(T).  [N/m2]
+
     H : function, optional
-      Latent heat of sublimation at temperature ``T`` in K: H(T).
-      [J/kg]
+        Latent heat of sublimation at temperature ``T`` in K: H(T). [J/kg]
 
     """
 
@@ -276,7 +276,7 @@ class Material(object):
         self.H = keywords.get("H", lambda T: None)
 
     def __repr__(self):
-        return "<grains.materials.Material [{}]>".format(self.name)
+        return "<Material [{}]>".format(self.name)
 
 
 def amcarbon(**keywords):
@@ -344,7 +344,6 @@ def wustite(**keywords):
 
 def ferropericlase50(**keywords):
     """Ferropericlase Mg_0.5 Fe_0.5 O."""
-    """Wüstite, FeO."""
     ref = resources.files("grains2") / "data/fe50o.dat"
     with resources.as_file(ref) as fn:
         x = np.loadtxt(fn, skiprows=4).T
@@ -353,14 +352,16 @@ def ferropericlase50(**keywords):
 
 
 def neutral(nk, wave=None, **keywords):
-    """A neutral scatterer, specify nk.
+    """A neutral scatterer.
+
 
     Parameters
     ----------
     nk : complex
-      The refractive index for all wavelengths.
+        The refractive index for all wavelengths.
+
     wave : array, optional
-      Use these wavelengths for creating the indices of refraction.
+        Use these wavelengths for creating the indices of refraction.
 
     """
     if wave is None:
@@ -394,10 +395,11 @@ def olivine95(**keywords):
 def vacuum(wave=None, **keywords):
     """Vacuum.
 
+
     Parameters
     ----------
     wave : array, optional
-      Use these wavelengths for creating the indices of refraction.
+        Use these wavelengths for creating the indices of refraction.
 
     """
     if wave is None:
@@ -415,13 +417,13 @@ def waterice(source="warren08", **keywords):
     Parameters
     ----------
     source : string
-      warren08 for Warren and Brandt 2008
-      warren84 for Warren 1984
-      bertie69 for Bertie et al. 1969
+        * "warren08" for Warren and Brandt 2008
+        * "warren84" for Warren 1984
+        * "bertie69" for Bertie et al. 1969
 
     """
 
-    ref = resources.files("grains2") / "data/{source}.dat"
+    ref = resources.files("grains2") / f"data/{source}.dat"
     with resources.as_file(ref) as fn:
         x = np.loadtxt(fn).T
     ri = RefractiveIndices(x[0], x[1] + 1j * x[2])

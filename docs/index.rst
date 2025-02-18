@@ -10,6 +10,8 @@ Use ``grains2`` to calculate the temperature or spectrum of dust in equilibrium 
 
 The concepts are primarily based on the Hanner-Harker dust model for comets (Harker et al. 2002, 2007).  However, support for cometary crystalline silicates is incomplete.
 
+grains2 is primarily Mie-based.  Bohren and Huffman Mie code is from Bruce Draine https://www.astro.princeton.edu/~draine/scattering.html  See source code for improvements on the original BH code.
+
 
 Refractory dust
 ---------------
@@ -38,6 +40,13 @@ Arrays of grain sizes are also allowed:
    >>> lte = PlaneParallelIsotropicLTE(a, ac, rh)
    >>> print(lte.T)  # doctest: +FLOAT_CMP
    [505.22681188 268.95336711 219.08381423]
+
+
+Ice sublimation
+---------------
+
+The sublimation model balances insolation with energy lost from sublimation and thermal radiation.  Losses due to solar wind sputtering (Mukai & Schwehm 1981) may also be included.  The optical constants of water ice from Warren & Brandt (2008) are included.  The latent heat of sublimation follows Delsemme & Miller (1971), and the vapor pressure equation of Lichtenegger & Komle (1991) is also used. Dust-ice aggregates may be created by mixing optical constants with the effective medium approximation of Bruggeman (1935).
+
 
 .. toctree::
    :maxdepth: 2

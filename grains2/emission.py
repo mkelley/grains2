@@ -40,11 +40,15 @@ class Coma(dict):
 
     Example
     -------
+    >>> import numpy as np
+    >>> from grains2 import Hanner, amcarbon, amolivine50
+    >>>
+    >>> rh = 1.0
     >>> a = np.logspace(-1, 2, 100)
-    >>> gsd = gsd.Hanner(0.1, 3.7, ap=0.4)
+    >>> gsd = Hanner(0.1, 3.7, ap=0.4)
     >>> coma = Coma()
     >>> for k, m in zip(('ac', 'ao'), (amcarbon(), amolivine50())):
-    >>>     coma[k] = CometDust(a, m, gsd, rh=1.3)
+    ...     coma[k] = CometDust(a, m, rh, gsd=gsd)
 
     """
 
@@ -91,14 +95,14 @@ class CometDust(PlaneParallelIsotropicLTE):
 
     Parameters
     ----------
-    rh : float
-        The distance to the Sun. [AU]
-
     a : float or array
         Grain radii.  [micron]
 
     m : Material
         Grain material.
+
+    rh : float
+        The distance to the Sun. [AU]
 
     gsd : GSD, optional
         Grain size distribution or ``None``.  If ``None``, ``fluxd()`` will return
@@ -127,9 +131,9 @@ class CometDust(PlaneParallelIsotropicLTE):
 
     def __init__(
         self,
-        rh,
         a,
         m,
+        rh,
         gsd=None,
         porosity=None,
         scattering=None,
@@ -141,9 +145,7 @@ class CometDust(PlaneParallelIsotropicLTE):
         if self.spec_model is not None:
             assert isinstance(self.spec_model, ScatteringModel)
 
-        PlaneParallelIsotropicLTE.__init__(
-            self, rh, a, m, scattering=scattering, porosity=porosity
-        )
+        super().__init__(a, m, rh, scattering=scattering, porosity=porosity)
 
         self.gsd = gsd
         if self.gsd is not None:

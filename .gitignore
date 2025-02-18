@@ -10,3 +10,4 @@ analysis/*ps
 .hypothesis
 lifetime*txt
 _version.py
+docs/_build

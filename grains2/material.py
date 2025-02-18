@@ -29,9 +29,14 @@ material --- Grain materials
 
 """
 
-import os
-import numpy as np
 from importlib import resources
+
+import numpy as np
+from scipy.interpolate import splrep, splev
+
+import astropy.units as u
+from astropy.io import ascii
+from astropy.table import Table, Column
 
 __all__ = [
     "amcarbon",
@@ -81,28 +86,29 @@ class RefractiveIndices:
     (``RefractiveIndices.n``) will return the mean of all axes. Individual axes
     can be returned by indexing the ``RefractiveIndices`` object:
 
-    >>> from grains2 import RefractiveIndices as RI
-    >>> w = np.linspace(0.3, 0.6)
+    >>> from grains2.material import RefractiveIndices as RI
+    >>> w = np.linspace(0.3, 0.6, 5)
     >>> nk = np.ones((3, len(w)), complex)
     >>> nk[1] *= 1.22
-    >>> nk[2] *= 1.5 + 0.01j
+    >>> nk[2] *= 1.5 + 0.03j
     >>> ri = RI(w, dict(x=nk[0], y=nk[1], z=nk[2]))
-    >>> print(ri.n)
-    >>> print(ri['z'].n)
+    >>> print(ri.nk)
+    [1.24+0.01j 1.24+0.01j 1.24+0.01j 1.24+0.01j 1.24+0.01j]
+    >>> print(ri['y'].nk)
+    [1.22+0.j 1.22+0.j 1.22+0.j 1.22+0.j 1.22+0.j]
 
     """
 
     def __init__(self, wave, nk):
         self.wave = wave
         self.nk = nk
+        self.anisotropic = False
 
         if isinstance(self.nk, dict):
             # multiple indices were given
+            self.anisotropic = True
             self.axes = self.nk
-            self.nk = np.zeros_like(self.wave, complex)
-            for nk in self.axes.values():
-                self.nk += nk
-            self.nk /= len(self.axes)
+            self.nk = np.array(list(self.axes.values()), complex).mean(0)
         else:
             self.nk = np.array(self.nk)
             self.axes = dict()
@@ -135,9 +141,6 @@ class RefractiveIndices:
             The interpolated values, or 0 if not defined at ``wave``.
 
         """
-
-        from scipy.interpolate import splrep, splev
-        import astropy.units as u
 
         wave = u.Quantity(wave, u.um).value
 
@@ -198,8 +201,6 @@ class RefractiveIndices:
     def table(self):
         """The refractive indices as a table."""
 
-        from astropy.table import Table, Column
-
         t = Table()
         t.add_column(Column(name="wave", data=self.wave))
         if len(self.axes) > 0:
@@ -230,8 +231,6 @@ def load_refractive_indices(filename):
     RefractiveIndices
 
     """
-    from astropy.io import ascii
-
     t = ascii.read(filename, format="fixed_width_two_line")
     if len(t.colnames) == 2:
         return RefractiveIndices(t["wave"].data, t["nk"].data)

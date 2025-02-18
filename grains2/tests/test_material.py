@@ -1,7 +1,8 @@
 import numpy as np
 from grains2 import material
 
-class TestMaterial():
+
+class TestMaterial:
     def test_materials(self):
         m = material.amcarbon()
         m = material.amolivine40()
@@ -9,7 +10,7 @@ class TestMaterial():
         m = material.ampyroxene40()
         m = material.ampyroxene50()
         m = material.magnetite()
-        m = material.neutral()
+        m = material.neutral(1.5 + 0.1 * 1j)
         m = material.olivine95()
         m = material.vacuum()
         m = material.waterice()
@@ -20,4 +21,3 @@ class TestMaterial():
         copy.nk *= 2
         assert not np.allclose(ri.nk, copy.nk)
         assert np.allclose(ri.nk * 2, copy.nk)
-

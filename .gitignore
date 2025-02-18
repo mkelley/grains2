@@ -9,3 +9,4 @@ analysis/*ps
 *.so
 .hypothesis
 lifetime*txt
+_version.py

@@ -41,28 +41,20 @@ Plot the real part of the refractive indices:
 
 .. plot::
    :context:
-   :nofigs:
-   :show-source-link: False
 
+   import matplotlib.pyplot as plt
    from grains2 import amcarbon, amolivine50, Bruggeman
+
    ac = amcarbon()
    ao50 = amolivine50()
    mix = Bruggeman.mix([ac, ao50], [1, 3])
 
-
-.. plot::
-   :context:
-
-   >>> import matplotlib.pyplot as plt
-   >>>
-   >>> fig, ax = plt.subplots()
-   >>> 
-   >>> ax.plot(ac.ri.wave, ac.ri.n, label="AC")
-   >>> ax.plot(ao50.ri.wave, ao50.ri.n, label="AO50")
-   >>> ax.plot(mix.ri.wave, mix.ri.n, label="Mix")
-   >>> 
-   >>> ax.legend()
-   >>> plt.setp(ax, xlabel="Wavelength (μm)", ylabel="$n$")
+   fig, ax = plt.subplots()
+   ax.plot(ac.ri.wave, ac.ri.n, label="Amorphous carbon")
+   ax.plot(ao50.ri.wave, ao50.ri.n, label="Amorphous olivine (Mg/Fe=50/50)")
+   ax.plot(mix.ri.wave, mix.ri.n, label="Mix")
+   ax.legend()
+   plt.setp(ax, xlabel="Wavelength (μm)", ylabel="$n$")
 
 
 Grain temperatures
@@ -129,7 +121,76 @@ Calculate the lifetime of a 1.0 μm water ice grain at 1.0 au, with and without 
    8622.61 s
 
 
-.. Dust-ice aggregates may be created by mixing optical constants with the effective medium approximation of Bruggeman (1935).
+Thermal emission spectra
+------------------------
+
+Once the temperature of a grain is calculated, its spectrum may be generated using the absorption efficiencies (:math:`Q_{abs}`) and the grain temperature.  The following example calculates the spectrum of a 0.3 μm radius amorphous pyroxene grain (Mg/Fe=50/50) at 2 au from the Sun and 1 au from the observer, using the formula:
+
+.. math::
+
+   F_\nu = \frac{\pi a^2 Q_{abs} * B_{\nu}(T)}{\Delta^2}
+
+
+First, setup our LTE instance.  Note that here we are tracking units with astropy, but the LTE classes do not accept astropy quantities, so we use `.value`:
+
+   >>> import astropy.units as u
+   >>> from mskpy.util import planck
+   >>> from grains2 import ampyroxene50
+   >>>
+   >>> a = 0.3 * u.um
+   >>> ap50 = ampyroxene50()
+   >>> rh = 2.0 * u.au
+   >>> delta = 1.0 * u.au
+   >>>
+   >>> lte = PlaneParallelIsotropicLTE(a.value, ap50, rh.value)
+
+:math:`Q_{abs}` is a two-dimensional array.  The first dimension is for grain size, the second dimension is for wavelength:
+
+   >>> lte.a.shape
+   (1,)
+   >>> lte.wave.shape
+   (322,)
+   >>> lte.Qabs.shape
+   (1, 322)
+
+Now, calculate the spectrum, limited to the 7 to 14 μm wavelength range:
+
+   >>> i = (lte.wave > 7) * (lte.wave < 14)
+   >>> wave = lte.wave[i]
+   >>> Qabs = lte.Qabs[0, i]
+   >>> B = planck(lte.T[0], wave, unit="Jy/sr")
+   >>> F = (np.pi * a**2 * Qabs * B * u.sr / delta**2).to("Jy")
+
+Plot the result:
+
+.. plot::
+
+   import numpy as np
+   import matplotlib.pyplot as plt
+   import astropy.units as u
+   from mskpy.util import planck
+   from grains2 import PlaneParallelIsotropicLTE, ampyroxene50
+
+   a = 0.3 * u.um
+   ap50 = ampyroxene50()
+   rh = 2.0 * u.au
+   delta = 1.0 * u.au
+   
+   lte = PlaneParallelIsotropicLTE(a.value, ap50, rh.value)
+   
+   i = (lte.wave > 7) * (lte.wave < 14)
+   wave = lte.wave[i]
+   Qabs = lte.Qabs[0, i]
+   B = planck(lte.T[0], wave, unit="Jy/sr")
+   F = (np.pi * a**2 * Qabs * B * u.sr / delta**2).to("Jy")
+
+   fig, ax = plt.subplots()
+   ax.plot(wave, F, label="Amorphous pyroxene (Mg/Fe=50/50)")
+   ax.legend()
+   plt.setp(ax, xlabel="Wavelength (μm)", ylabel=r"$F_\nu$ (Jy)")
+
+
+
 
 .. toctree::
    :maxdepth: 2

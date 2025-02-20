@@ -241,7 +241,7 @@ def load_refractive_indices(filename):
         return RefractiveIndices(t["wave"].data, axes)
 
 
-class Material(object):
+class Material:
     """Physical properties of materials.
 
     Parameters
@@ -276,6 +276,47 @@ class Material(object):
 
     def __repr__(self):
         return "<Material [{}]>".format(self.name)
+
+
+class Ice(Material):
+    """Physical properties of a volatile material (ice).
+
+    Parameters
+    ----------
+    name : string
+        A string name of the material.
+
+    rho : float
+        The bulk density.  [g/cm3]
+
+    ri : RefractiveIndices
+        The refractive indices.
+
+    mu : float
+        The mass of one molecule (relevant for ices). [kg]
+
+    Pv : function
+        Vapor pressure at temperature ``T`` in K: Pv(T).  [N/m2]
+
+    H : function
+        Latent heat of sublimation at temperature ``T`` in K: H(T). [J/kg]
+
+    sputtering : function
+        Solar wind sputtering rate.  []
+
+    """
+
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.rho = kwargs.get("rho")
+        self.ri = kwargs.get("ri")
+        self.mu = kwargs.get("mu")
+        self.Pv = kwargs.get("Pv", lambda T: None)
+        self.H = kwargs.get("H", lambda T: None)
+        self.sputtering = kwargs.get("sputtering", None)
+
+    def __repr__(self):
+        return "<Ice [{}]>".format(self.name)
 
 
 def amcarbon(**keywords):
@@ -439,6 +480,33 @@ def waterice(source="warren08", **keywords):
         mu = 18 * 1.66e-27  # molecular mass, kg
         return Pr * np.exp(mu * H(T) / kB * (1.0 / Tr - 1.0 / T))
 
-    return Material(
-        "water ice", rho=1.0, ri=ri, Pv=Pv, H=H, mu=18 * 1.66e-27, **keywords
+    def sputtering(rh):
+        """Rate of sputtering from solar wind for pure ice.
+
+        Nominal solar wind, Mukai & Schwem 1981.
+
+
+        Parameters
+        ----------
+        rh : float
+            Heliocentric distance.  [au]
+
+        Returns
+        -------
+        Z_sp : Quantity
+            Sputtering rate per cross sectional area.
+
+        """
+
+        return u.Quantity(1.1e8 * rh**-2, "1/(s cm2)")
+
+    return Ice(
+        "water ice",
+        rho=1.0,
+        ri=ri,
+        Pv=Pv,
+        H=H,
+        mu=18 * 1.66e-27,
+        sputtering=sputtering,
+        **keywords,
     )

@@ -1,27 +1,28 @@
-.. grains2 documentation master file, created by
-   sphinx-quickstart on Tue Feb 18 10:44:47 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 grains2 documentation
 =====================
 
-Use ``grains2`` to calculate the temperature or spectrum of dust in equilibrium with radiation, with optional considerations for sublimation.  ``grains2`` is designed for observations of solar system dust at a single location with respect to the Sun, but implementations for other scenarios is possible (e.g., an exocomet around beta Pic).
+Use ``grains2`` to calculate the temperature and spectrum of dust in equilibrium with radiation, with optional considerations for sublimation.  ``grains2`` is designed for observations of solar system dust at a single location with respect to the Sun, but implementations for other scenarios is possible (e.g., an exocomet around beta Pic).
 
 The concepts are primarily based on the Hanner-Harker dust model for comets (Harker et al. 2002, 2007).  However, support for cometary crystalline silicates is incomplete.
 
 grains2 is primarily Mie-based.  Bohren and Huffman Mie code is from Bruce Draine https://www.astro.princeton.edu/~draine/scattering.html  See source code for improvements on the original BH code.
 
 
-Refractory dust
----------------
+Grain composition
+-----------------
 
-Dust grains are described by indices of refraction, which are encapsulated within instances of the ``Material`` class:
+Dust (and ice) grains are described by indices of refraction, which are encapsulated within instances of the ``Material`` class.  ``Material`` may be used to define the grain composition directly.  There are a set of materials provided in the ``grains2.material`` sub-module:
 
    >>> from grains2 import amcarbon
    >>> ac = amcarbon()
    >>> ac
    <Material [amorphous carbon]>
+   >>> print("Bulk density: ", ac.rho, "g/cm3")
+   Bulk density: 1.5 g/cm3
+
+
+Grain temperatures
+------------------
 
 The ``PlaneParallelIsotropicLTE`` class is used to calculate the temperature of a dust grain in local thermodynamic equilibrium between absorbed sunlight (plane parallel waves) and re-radiated thermal energy (isotropic emission).
 
@@ -31,22 +32,60 @@ To calculate the temperature of a 1.0 μm amorphous carbon grain:
    >>> a = 1.0  # radius, μm
    >>> rh = 1.5  # heliocentric distance, au
    >>> lte = PlaneParallelIsotropicLTE(a, ac, rh)
-   >>> print(lte.T)  # doctest: +FLOAT_CMP
-   [268.95336711]
+   >>> print(lte.T[0], "K")  # doctest: +FLOAT_CMP
+   268.95336711 K
 
 Arrays of grain sizes are also allowed:
 
    >>> a = [0.1, 1, 10]  # radius, μm
    >>> lte = PlaneParallelIsotropicLTE(a, ac, rh)
-   >>> print(lte.T)  # doctest: +FLOAT_CMP
-   [505.22681188 268.95336711 219.08381423]
+   >>> print(lte.T, "K")  # doctest: +FLOAT_CMP
+   [505.22681188 268.95336711 219.08381423] K
 
 
 Ice sublimation
 ---------------
 
-The sublimation model balances insolation with energy lost from sublimation and thermal radiation.  Losses due to solar wind sputtering (Mukai & Schwehm 1981) may also be included.  The optical constants of water ice from Warren & Brandt (2008) are included.  The latent heat of sublimation follows Delsemme & Miller (1971), and the vapor pressure equation of Lichtenegger & Komle (1991) is also used. Dust-ice aggregates may be created by mixing optical constants with the effective medium approximation of Bruggeman (1935).
+Ice sublimation is modeled with the ``SublimationLTE`` class, which balances absorbed sunlight with the energy losses from re-radiated thermal energy and the latent heat of sublimation of the ice.
 
+The ``grains2`` water ice material includes the optical constants of water ice from Warren & Brandt (2008).  The latent heat of sublimation follows Delsemme & Miller (1971), and the vapor pressure equation of Lichtenegger & Komle (1991) is also used.
+
+
+Temperature and mass-loss rate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calculate the temperature and sublimation rate of a 1.0 μm pure water ice grain at 1.0 au from the Sun:
+
+   >>> from grains2 import SublimationLTE, waterice
+   >>>
+   >>> a = 1.0  # radius, μm
+   >>> ice = waterice()
+   >>> rh = 1.0  # heliocentric distance, au
+   >>> 
+   >>> sublimation = SublimationLTE(a, ice, rh)
+   >>> print(sublimation.T[0], "K")  # doctest: +FLOAT_CMP
+   160.52729461 K
+   >>> print(sublimation.phi()[0], "kg/m2/s")  # doctest: +FLOAT_CMP
+   1.35242694e-07 kg/m2/s
+
+
+Grain sublimation lifetime
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Grain lifetimes may be calculated with the ``SublimationLTE.lifetime()`` method.  This requires a list of grain radii, so that it can integrate :math:`da/dt` from :math:`a_i` to :math:`a_0`.  Formally, for a grain to sublimate to :math:`a=0` approaches infinity.  In order to avoid this non-physical scenario, ``lifetime`` will sublimate the grain from :math:`a_0` to 0 using a constant radius loss rate (:math:`da/dt|a_0`).  Users must decide for themselves what to use for :math:`a_0`.
+
+Calculate the lifetime of a 1.0 μm water ice grain at 1.0 au, with and without considerations for solar wind sputtering:
+
+   >>> import numpy as np
+   >>>
+   >>> a = np.logspace(-2, 0)
+   >>> sublimation = SublimationLTE(a, ice, rh)
+   >>> tau = sublimation.lifetime()
+   >>> print(tau[-1])  # doctest: +FLOAT_CMP
+   8622.61 s
+
+
+.. Dust-ice aggregates may be created by mixing optical constants with the effective medium approximation of Bruggeman (1935).
 
 .. toctree::
    :maxdepth: 2

@@ -21,7 +21,7 @@ from mskpy import calib
 from mskpy.util import planck
 from mskpy.util import autodoc
 
-from .material import Material
+from .material import Material, Ice
 from .scattering import ScatteringModel, Mie
 from .porosity import PorosityModel, Solid
 from .davint import davint
@@ -537,33 +537,23 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
         return 4.0 * pi * (a * 1e-6) ** 2 * BQ
 
 
-class SublimationLTE(RadiativeLTE):
-    """Sublimating grain in vacuum and radiation.
+class SublimationLTE(PlaneParallelIsotropicLTE):
+    lines = PlaneParallelIsotropicLTE.__doc__.splitlines()[1:]
+    i = lines.index("    m : Material")
+    __doc__ = (
+        "Plane parallel incident radiation, isotropic thermal emission, isotropic sublimation."
+        + "\n".join(lines[:i])
+        + "    m : Ice\n"
+        + "\n".join(lines[i + 1 :])
+    )
 
-
-    Parameters
-    ----------
-    *args
-        Arguments for ``radiation``.  For sublimation, the grain material must
-        have ``Pv``, ``H``, ``rho``, and ``mu`` defined.
-
-    radiation : RadiativeLTE class, optional
-        The radiation environment.
-
-    **kwargs
-        Any keyword arguments for `radiation`.
-
-    """
-
-    def __init__(self, *args, radiation=PlaneParallelIsotropicLTE, **kwargs):
-        self.radiation = radiation
-        radiation.__init__(self, *args, **kwargs)
-
-    def _Eabs(self, a, SQ):
-        return self.radiation._Eabs(self, a, SQ)
+    def __init__(self, a, m, rh, **kwargs):
+        if not isinstance(m, Ice):
+            raise ValueError(f"Expecting an Ice, got {type(m)}")
+        super().__init__(a, m, rh, **kwargs)
 
     def _Erad(self, a, Qabs, T):
-        return self.radiation._Erad(self, a, Qabs, T) + self._Esubl(a, T)
+        return super()._Erad(a, Qabs, T) + self._Esubl(a, T)
 
     def _Esubl(self, a, T):
         """Scalar function."""
@@ -597,22 +587,6 @@ class SublimationLTE(RadiativeLTE):
         T = self.T if T is None else T
         return -1e6 * self.phi(T) / (self.m.rho * 1e3)
 
-    def sputtering(self):
-        """Rate of sputtering from solar wind for pure ice.
-
-        Nominal solar wind, Mukai & Schwem 1981.
-
-
-        Returns
-        -------
-        Z_sp : Quantity
-            Sputtering rate at ``self.rh``.
-
-        """
-
-        Z_sp = u.Quantity(1.1e8 * self.r**-2, "1/(s cm2)")
-        return Z_sp
-
     def lifetime(self, sputtering=True):
         """Estimate grain lifetimes.
 
@@ -640,8 +614,11 @@ class SublimationLTE(RadiativeLTE):
         dtda = self.dadt() ** -1
 
         if sputtering:
+            if not hasattr(self.m, "sputtering"):
+                raise ValueError(f"{self.m} does not have a sputtering function")
             dtda = (
-                -1e7 * self.m.mu / self.m.rho * self.sputtering().value + dtda**-1
+                -1e7 * self.m.mu / self.m.rho * self.m.sputtering(self.r).value
+                + dtda**-1
             ) ** -1
 
         tau = np.zeros(self.a.shape)

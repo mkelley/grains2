@@ -22,6 +22,7 @@ gsd --- Grain size distributions
 
 """
 
+import warnings
 import numpy as np
 from scipy import special
 from astropy.utils.decorators import deprecated
@@ -55,7 +56,7 @@ class GSD(object):
         float or array
 
         """
-        return self._dnda(a)
+        return self._dnda(np.array(a))
 
     @deprecated("0.6", alternative="Use dnda()")
     def n(self, a):
@@ -75,7 +76,7 @@ class GSD(object):
 
 
 class Hanner(GSD):
-    """Hanner modified power law grain size distribution.
+    """Hanner modified power-law differential grain size distribution.
 
 
     Parameters
@@ -124,7 +125,15 @@ class Hanner(GSD):
 
     def _dnda(self, a):
         norm = (1 - self.a0 / self.ap) ** self.M * (self.a0 / self.ap) ** self.N
-        n = (1 - self.a0 / a) ** self.M * (self.a0 / a) ** self.N
+
+        with warnings.catch_warnings():
+            # ignore divide by 0 warnings
+            warnings.simplefilter("ignore", RuntimeWarning)
+            n = (1 - self.a0 / a) ** self.M * (self.a0 / a) ** self.N
+
+        i = (a < self.a0) + np.isclose(a, self.a0)
+        n[i] = 0
+
         return n / norm
 
 

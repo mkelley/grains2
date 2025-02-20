@@ -72,9 +72,7 @@ class PorosityModel(ABC):
 
         """
         p = self.P(np.array(a))
-        return self.ema.mix(
-            (material, vacuum(wave=material.ri.wave)), (1 - self.p, self.p)
-        )
+        return self.ema.mix((material, vacuum(wave=material.ri.wave)), (1 - p, p))
 
 
 class ConstantPorosity(PorosityModel):

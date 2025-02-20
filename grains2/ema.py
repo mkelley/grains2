@@ -12,18 +12,19 @@ emt --- Effective medium approximations
 
 """
 
+from abc import ABC, abstractmethod
 import numpy as np
+from .material import Material, RefractiveIndices
 
 __all__ = ["Bruggeman"]
 
 
-class EMA(object):
+class EMA:
     """Abstract base class for effective medium approximation classes."""
 
-    def __init__(self):
-        pass
-
-    def mix(self, materials, fractions, name=None):
+    @staticmethod
+    @abstractmethod
+    def mix(materials, fractions, name=None):
         """Mix materials together.
 
         Parameters
@@ -46,8 +47,6 @@ class EMA(object):
 
         """
 
-        return self._mix(materials, fractions, name=name)
-
 
 class Bruggeman(EMA):
     """Effective medium approximation via the Bruggeman mixing rule.
@@ -66,9 +65,8 @@ class Bruggeman(EMA):
 
     """
 
-    def _mix(self, materials, fractions, name=None):
-        from .material import Material, RefractiveIndices
-
+    @staticmethod
+    def mix(materials, fractions, name=None):
         f = np.array(fractions, float) / np.sum(fractions)
 
         if (len(materials) != 2) or (len(f) != 2):

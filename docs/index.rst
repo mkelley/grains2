@@ -15,4 +15,5 @@ grains2 is primarily Mie-based.  Bohren and Huffman Mie code is from `Bruce Drai
    grains2/lte
    grains2/spectra
    grains2/gsd
+   grains2/porosity
    grains2/sublimation

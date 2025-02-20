@@ -19,14 +19,16 @@ porosity --- Porosity models
 
 """
 
+from abc import ABC, abstractmethod
 import numpy as np
+from astropy.utils.decorators import deprecated
 from .ema import EMA, Bruggeman
 from .material import vacuum
 
 __all__ = ["ConstantPorosity", "FractalPorosity", "Solid", "fractal_porosity"]
 
 
-class PorosityModel:
+class PorosityModel(ABC):
     """Abstract base class for porosity models.
 
 
@@ -42,7 +44,15 @@ class PorosityModel:
         self.ema = Bruggeman() if ema is None else ema
         assert isinstance(self.ema, EMA)
 
+    @abstractmethod
+    def P(self, a):
+        """Calculate the porosity for a grain of radius a."""
+
+    @deprecated("0.6", alternative="Use apply()")
     def __call__(self, material, a):
+        self.apply(material, a)
+
+    def apply(self, material, a):
         """Mix vacuum into a material to make it porous.
 
 
@@ -61,7 +71,10 @@ class PorosityModel:
             The porous material.
 
         """
-        return self._mix(material, a)
+        p = self.P(np.array(a))
+        return self.ema.mix(
+            (material, vacuum(wave=material.ri.wave)), (1 - self.p, self.p)
+        )
 
 
 class ConstantPorosity(PorosityModel):
@@ -85,10 +98,8 @@ class ConstantPorosity(PorosityModel):
         assert self.p >= 0
         assert self.p <= 1.0
 
-    def _mix(self, material, a):
-        return self.ema.mix(
-            (material, vacuum(wave=material.ri.wave)), (1 - self.p, self.p)
-        )
+    def P(self, a):
+        return np.ones_like(a) * self.p
 
 
 class FractalPorosity(PorosityModel):
@@ -116,16 +127,16 @@ class FractalPorosity(PorosityModel):
         self.D = D
         assert self.D <= 3.0
 
-    def _mix(self, material, a):
-        p = fractal_porosity(a, self.a0, self.D)
-        return self.ema.mix((material, vacuum(wave=material.ri.wave)), (1 - p, p))
+    def P(self, a):
+        """Porosity for grains of size a."""
+        return fractal_porosity(a, self.a0, self.D)
 
 
 class Solid(ConstantPorosity):
     """Solid grains."""
 
     def __init__(self):
-        ConstantPorosity.__init__(self, 0.0)
+        super().__init__(0.0)
 
 
 def fractal_porosity(a, a0, D):

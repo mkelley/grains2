@@ -246,7 +246,7 @@ class RadiativeLTE(ABC):
         for i in range(len(self.a)):
             # compute Qabs, Qsca, and Qext, then interpolate
             w = self.m.ri.wave
-            m = self.porosity(self.m, self.a[i])
+            m = self.porosity.apply(self.m, self.a[i])
             Q = self.scattering.q(self.a[i], w, m.ri)
 
             self.Qabs_orig[i] = Q["qabs"]

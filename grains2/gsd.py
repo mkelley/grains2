@@ -78,6 +78,8 @@ class GSD(object):
 class Hanner(GSD):
     """Hanner modified power-law differential grain size distribution.
 
+        dn/da = Np * (1 - a0 / a)**M (a0 / a)**N
+
 
     Parameters
     ----------
@@ -270,6 +272,8 @@ class Normal(GSD):
 
 class PowerLaw(GSD):
     """Power law grain size distribution.
+
+        dn/da = N0 * (a / a0)**N
 
 
     Parameters

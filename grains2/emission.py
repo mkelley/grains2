@@ -10,6 +10,7 @@ Harker07
 
 """
 
+from warnings import warn
 import numpy as np
 from numpy import pi
 from scipy.interpolate import splrep, splev
@@ -41,7 +42,7 @@ class Coma(dict):
     Example
     -------
     >>> import numpy as np
-    >>> from grains2 import Hanner, amcarbon, amolivine50
+    >>> from grains2 import Coma, CometDust, Hanner, amcarbon, amolivine50
     >>>
     >>> rh = 1.0
     >>> a = np.logspace(-1, 2, 100)
@@ -268,7 +269,8 @@ class Harker07(Coma):
     def __init__(
         self, rh, delta, gsd, porosity, arange=[0.1, 100], arange_cryst=[0.1, 1.0]
     ):
-        print("WARNING: Ortho-pyroxene not yet implemented.")
+        warn("Hot crystalline model not yet validated.")
+        warn("Ortho-pyroxene not yet implemented.")
 
         self._rh = u.Quantity(rh, u.au)
         self._delta = u.Quantity(delta, u.au)

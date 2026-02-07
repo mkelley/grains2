@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+import argparse
+import numpy as np
+from scipy.integrate import quad
+from sbpy.activity import phase_HalleyMarcus
+import astropy.units as u
+
+
+def parse_quantity(default_unit):
+    def _parse(x):
+        return u.Quantity(x, default_unit)
+    return _parse
+
+
+def parse_fluxd(x):
+    q = u.Quantity(x)
+    if q.unit == u.dimensionless_unscaled:
+        return q * u.ABmag
+    else:
+        return q
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "fluxd", type=parse_fluxd, help="dust brightness, ABmag if no units specified")
+parser.add_argument("rh", type=parse_quantity(
+    "au"), help="heliocentric distance, au if no units specified")
+parser.add_argument("delta", type=parse_quantity(
+    "au"), help="observer-target distance, au if no units specified")
+parser.add_argument("phase", type=parse_quantity(
+    "deg"), help="phae angle, deg if no units specified")
+parser.add_argument("-A", type=float, default=0.04, help="albedo (4%)")
+parser.add_argument("-w", type=parse_quantity("um"),
+                    help="wavelength, as needed for unit conversions")
+parser.add_argument("-k", type=float, default=-3.5,
+                    help="power law slope (-3.5)")
+parser.add_argument("--a1", type=parse_quantity("um"), default=0.1 * u.um,
+                    help="minimum grain size, μm if no units specified (0.1 um)")
+parser.add_argument("--a2", type=parse_quantity("um"), default=1000 * u.um,
+                    help="maximum grain size, μm if no units specified (1 mm)")
+parser.add_argument("--rho", type=parse_quantity("kg/m3"),
+                    default=1000, help="grain density, kg/m3 if no units specified (1000 kg/m3)")
+args = parser.parse_args()
+
+# unit conversions
+a1 = args.a1.to_value("m")
+a2 = args.a2.to_value("m")
+rho = args.rho.to_value("kg/m3")
+
+# calculate ratio between G and M
+points = np.logspace(np.log10(a1), np.log10(a2), 10)
+num = np.pi * quad(lambda a: a ** (args.k + 2), a1, a2, points=points)[0]
+den = 4 / 3 * np.pi * rho * \
+    quad(lambda a: a ** (args.k + 3), a1, a2, points=points)[0]
+G_M = num / den  # m2/kg
+
+G = np.pi

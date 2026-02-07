@@ -17,13 +17,13 @@ def lifetime(a, m, rh):
     g = SublimationLTE(a, m, rh)
 
     dadt = g.dadt()
-    tau = [davint(a, -1.0 / dadt, a[0], b) for b in a[2:]]
+    tau = [davint(a, -1.0 / dadt, len(a), a[0], b)[0] for b in a[2:]]
     tau = -a[0] / dadt[0] + np.r_[0, (a[0] - a[1]) / dadt[1], tau]
 
     # add sputtering from nominal solar wind
     Zsp = 1.1e8 * rh**-2  # molec/s/cm2, Mukai and Schwem 1981
     dadt -= 1e7 * Zsp * g.m.mu / g.m.rho
-    tau_sp = [davint(a, -1.0 / dadt, a[0], b) for b in a[2:]]
+    tau_sp = [davint(a, -1.0 / dadt, len(a), a[0], b)[0] for b in a[2:]]
     tau_sp = -a[0] / dadt[0] + np.r_[0, (a[0] - a[1]) / dadt[1], tau_sp]
 
     return tau, tau_sp

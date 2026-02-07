@@ -139,7 +139,7 @@ class CometDust(PlaneParallelIsotropicLTE):
         scattering=None,
         spec_model=None,
         tscale=1.0,
-        **kwargs
+        **kwargs,
     ):
         self.spec_model = spec_model
         if self.spec_model is not None:
@@ -224,7 +224,9 @@ class CometDust(PlaneParallelIsotropicLTE):
         if len(self.a) == 1:
             F = (self.gsd.dnda(self.a) * f)[0]
         else:
-            F = davint(self.a, self.gsd.dnda(self.a) * f.T, self.a[0], self.a[-1])
+            F = self.davint(
+                self.a, self.gsd.dnda(self.a) * f.T, len(self.a), self.a[0], self.a[-1]
+            )[0]
         return F
 
     def update(self, **keywords):

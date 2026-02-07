@@ -296,28 +296,37 @@ class RadiativeLTE(ABC):
             self.SQ[i] = davint(
                 self.wave[j],
                 self.S[j] * self.Qabs[i, j],
+                len(self.wave[j]),
                 self.wave[j][0],
                 self.wave[j][-1],
-            )
-            temp = davint(self.wave[j], self.S[j], self.wave[j][0], self.wave[j][-1])
+            )[0]
+            temp = davint(
+                self.wave[j],
+                self.S[j],
+                len(self.wave[j]),
+                self.wave[j][0],
+                self.wave[j][-1],
+            )[0]
             self.Qabs_bar[i] = self.SQ[i] / temp
 
             j = (self.S * self.Qsca[i]) > 0
             SQsca[i] = davint(
                 self.wave[j],
                 self.S[j] * self.Qsca[i, j],
+                len(self.wave[j]),
                 self.wave[j][0],
                 self.wave[j][-1],
-            )
+            )[0]
             self.Qsca_bar[i] = SQsca[i] / temp
 
             j = (self.S * self.Qext[i]) > 0
             SQext[i] = davint(
                 self.wave[j],
                 self.S[j] * self.Qext[i, j],
+                len(self.wave[j]),
                 self.wave[j][0],
                 self.wave[j][-1],
-            )
+            )[0]
             self.Qext_bar[i] = SQext[i] / temp
 
     @property
@@ -445,9 +454,9 @@ class RadiativeLTE(ABC):
             # update Qrad_bar with the solution
             B = pi * planck(self.wave, self._T[i], unit=u.Unit("W/(m2 sr um)")).value
             self.BQ[i] = davint(
-                self.wave, B * self.Qabs[i], self.wave[0], self.wave[-1]
-            )
-            temp = davint(self.wave, B, self.wave[0], self.wave[-1])
+                self.wave, B * self.Qabs[i], len(self.wave), self.wave[0], self.wave[-1]
+            )[0]
+            temp = davint(self.wave, B, len(self.wave), self.wave[0], self.wave[-1])[0]
             self.Qrad_bar[i] = self.BQ[i] / temp
 
         self._updated = True
@@ -533,7 +542,7 @@ class PlaneParallelIsotropicLTE(RadiativeLTE):
 
     def _Erad(self, a, Qabs, T):
         B = pi * planck(self.wave, T, unit=u.Unit("W/(m2 sr um)")).value
-        BQ = davint(self.wave, B * Qabs, self.wave[0], self.wave[-1])
+        BQ = davint(self.wave, B * Qabs, len(self.wave), self.wave[0], self.wave[-1])[0]
         return 4.0 * pi * (a * 1e-6) ** 2 * BQ
 
 
@@ -624,7 +633,7 @@ class SublimationLTE(PlaneParallelIsotropicLTE):
         tau = np.zeros(self.a.shape)
         # davint requires 3 values between integration limits
         for i in range(2, len(self.a)):
-            tau[i] = davint(self.a, -dtda, self.a[0], self.a[i])
+            tau[i] = davint(self.a, -dtda, len(self.a), self.a[0], self.a[i])[0]
         tau[1] = (self.a[1] - self.a[0]) * -dtda[0]
         tau += -self.a[0] * dtda[0]
 

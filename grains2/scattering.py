@@ -303,7 +303,8 @@ class ScatteringModel(ABC):
 
         return Phi
 
-    def _processInput(self, a, w, ri):
+    @staticmethod
+    def _process_input(a, w, ri):
         """Test inputs, and prepare x, nk, and q variables.
 
         1) Compute x = 2 pi a / w:
@@ -414,10 +415,10 @@ class Mie(ScatteringModel):
         """
 
         nang = 2 if nang < 2 else nang
-        x, nk, qsca, shape = self._processInput(a, w, ri)
+        x, nk, qsca, shape = self._process_input(a, w, ri)
         qext, qback, gsca = np.ones((3,) + qsca.shape)
         s1, s2 = np.zeros((2, qsca.size, 2 * nang - 1), complex)
-        Phi = np.zeros((qsca.size, 2 * nang - 1))
+        # Phi = np.zeros((qsca.size, 2 * nang - 1))
         alpha = np.linspace(0, 180.0, 2 * nang - 1)
         for i in range(len(x)):
             q = bhmie(x[i], nk[i], nang)
@@ -442,21 +443,21 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qsca(self, a, w, ri):
-        x, nk, q, shape = self._processInput(a, w, ri)
+        x, nk, q, shape = self._process_input(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[3]
         return q.reshape(shape)
 
     @_return_float_or_array
     def qext(self, a, w, ri):
-        x, nk, q, shape = self._processInput(a, w, ri)
+        x, nk, q, shape = self._process_input(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[2]
         return q.reshape(shape)
 
     @_return_float_or_array
     def qabs(self, a, w, ri):
-        x, nk, q, shape = self._processInput(a, w, ri)
+        x, nk, q, shape = self._process_input(a, w, ri)
         for i in range(len(x)):
             r = bhmie(x[i], nk[i], 1)
             q[i] = r[2] - r[3]
@@ -464,14 +465,14 @@ class Mie(ScatteringModel):
 
     @_return_float_or_array
     def qback(self, a, w, ri):
-        x, nk, q, shape = self._processInput(a, w, ri)
+        x, nk, q, shape = self._process_input(a, w, ri)
         for i in range(len(x)):
             q[i] = bhmie(x[i], nk[i], 1)[4]
         return q.reshape(shape)
 
     @_return_float_or_array
     def gsca(self, a, w, ri):
-        x, nk, g, shape = self._processInput(a, w, ri)
+        x, nk, g, shape = self._process_input(a, w, ri)
         for i in range(len(x)):
             g[i] = bhmie(x[i], nk[i], 1)[5]
         return g.reshape(shape)
@@ -502,7 +503,7 @@ class Mie(ScatteringModel):
             1``.
 
         """
-        x, nk = self._processInput(a, w, ri)[:2]
+        x, nk = self._process_input(a, w, ri)[:2]
         nang = 2 if nang < 2 else nang
         s = np.zeros((len(x), 2 * nang - 1))
         for i in range(len(x)):
@@ -535,7 +536,7 @@ class Mie(ScatteringModel):
 
         """
 
-        x, nk = self._processInput(a, w, ri)[:2]
+        x, nk = self._process_input(a, w, ri)[:2]
         nang = 2 if nang < 2 else nang
         s = np.zeros((len(x), 2 * nang - 1))
         for i in range(len(x)):
@@ -640,7 +641,7 @@ class OblateCDE(ScatteringModel):
     def qabs(self, av, w, ri):
         nk = dict()
         for axis in ri.keys():
-            x, nk[axis], q, shape = self._processInput(av, w, ri[axis])
+            x, nk[axis], q, shape = self._process_input(av, w, ri[axis])
 
         sigma = np.zeros_like(x, dtype=complex)
         for axis in ri.keys():
@@ -759,7 +760,7 @@ class ProlateCDE(ScatteringModel):
 
         nk = dict()
         for axis in ri.keys():
-            x, nk[axis], q, shape = self._processInput(av, w, ri[axis])
+            x, nk[axis], q, shape = self._process_input(av, w, ri[axis])
 
         sigma = np.zeros_like(x, dtype=complex)
         for axis in ri.keys():

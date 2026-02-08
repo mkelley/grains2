@@ -32,7 +32,7 @@ material --- Grain materials
 from importlib import resources
 
 import numpy as np
-from scipy.interpolate import splrep, splev
+from scipy.interpolate import make_interp_spline
 
 import astropy.units as u
 from astropy.io import ascii
@@ -53,22 +53,23 @@ __all__ = [
 
 
 class RefractiveIndices:
-    """Refractive index.
+    """Bulk material refractive indices as a function of wavelength.
 
 
     Parameters
     ----------
     wave : ndarray
-        The wavelengths. [micron]
+        The wavelengths. [μm]
 
     nk : complex ndarray, or dictionary
         The indices of refraction.  May be a dictionary of N-element arrays to
-        specify different axes for anisotripic materials (see Examples).
+        specify different axes for anisotropic materials (see Examples).
+
 
     Attributes
     ----------
     wave : array
-        The wavelengths. [micron]
+        The wavelengths. [μm]
 
     nk : array
         The complex indices of refraction.
@@ -144,23 +145,20 @@ class RefractiveIndices:
 
         wave = u.Quantity(wave, u.um).value
 
-        n = splrep(self.wave, self.n)
+        n = make_interp_spline(self.wave, self.n)(wave)
+
         if log:
-            k = splrep(self.wave, np.log(self.k))
-            newk = splev(wave, k, ext=1)
-            if newk.size > 1:
-                i = (newk != 0) * np.isfinite(newk)
-                newk[i] = np.exp(newk[i])
-                newk[~i] = 0
+            # avoid -inf
+            logk = make_interp_spline(self.wave, np.log(self.k + 1e-99))(wave)
+            k = np.exp(logk) - 1e-99
+            if np.size(k) == 1:
+                k = 0 if np.isclose(k, 0, atol=1e-20) else k
             else:
-                if (newk != 0) and np.isfinite(newk):
-                    newk = np.exp(newk)
-                else:
-                    newk = 0
-            return splev(wave, n, ext=1) + newk * 1j
+                k[np.isclose(k, 0, atol=1e-20)] = 0
         else:
-            k = splrep(self.wave, self.k)
-            return splev(wave, n, ext=1) + splev(wave, k, ext=1) * 1j
+            k = make_interp_spline(self.wave, self.k)(wave)
+
+        return n + k * 1j
 
     @property
     def n(self):

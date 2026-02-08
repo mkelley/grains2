@@ -1,5 +1,5 @@
 import numpy as np
-from grains2 import material
+from .. import material
 
 
 class TestMaterial:
@@ -21,3 +21,9 @@ class TestMaterial:
         copy.nk *= 2
         assert not np.allclose(ri.nk, copy.nk)
         assert np.allclose(ri.nk * 2, copy.nk)
+
+
+class TestRefractiveIndices:
+    def test_interpolate(self):
+        ri = material.amcarbon().ri
+        assert np.allclose(ri(ri.wave), ri.nk)

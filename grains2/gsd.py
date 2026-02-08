@@ -285,17 +285,27 @@ class PowerLaw(GSD):
         Normalization grain radius.
 
     N0 : float, optional
-        Number of grains with radius `a0`.
+        Number of grains with radius ``a0``.
+
+    a_min : float, optional
+        Minimum grain radius.
+
+    a_max : float, optional
+        Maximum grain radius.
 
     """
 
-    def __init__(self, N, a0=1.0, N0=1.0):
+    def __init__(self, N, a0=1.0, N0=1.0, a_min=0, a_max=np.inf):
         self.a0 = a0
         self.N = N
         self.N0 = N0
+        self.a_min = a_min
+        self.a_max = a_max
 
     def _dnda(self, a):
-        return self.N0 * (a / self.a0) ** self.N
+        dnda = self.N0 * (a / self.a0) ** self.N
+        limits = (a >= self.a_min) * (a <= self.a_max)
+        return dnda * limits
 
 
 def hanner_gsd(a, a0, N, M=None, ap=None, Np=1.0):

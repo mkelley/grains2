@@ -86,8 +86,42 @@ class Coma(dict):
             f[k] = v.fluxd(self.delta, wave, unit=unit, sum=True)
         return f
 
-    def update(self, gsd=None):
-        pass
+    def update(self, **kwargs):
+        """Update the model parameters.
+
+        Parameters
+        ----------
+        rh : Quantity, optional
+
+        delta : Quantity, optional
+
+        gsd : GSD, optional
+
+        porosity : PorosityModel, optional
+
+        """
+
+        delta = kwargs.pop("delta", None)
+        if delta is not None:
+            self.delta = u.Quantity(delta, u.au).value
+
+        porosity = kwargs.pop("porosity", None)
+        if porosity is not None:
+            for k in self.keys():
+                self[k].porosity = porosity
+
+        rh = kwargs.pop("rh", None)
+        if rh is not None:
+            for k in self.keys():
+                self[k].r = rh
+
+        gsd = kwargs.pop("gsd", None)
+        if gsd is not None:
+            for k in self.keys():
+                self[k].gsd = gsd
+
+        for k in self.keys():
+            self[k].update()
 
 
 class CometDust(PlaneParallelIsotropicLTE):
@@ -225,9 +259,16 @@ class CometDust(PlaneParallelIsotropicLTE):
         if len(self.a) == 1:
             F = (self.gsd.dnda(self.a) * f)[0]
         else:
-            F = self.davint(
-                self.a, self.gsd.dnda(self.a) * f.T, len(self.a), self.a[0], self.a[-1]
-            )[0]
+            F = np.zeros(len(wave))
+            for i in range(len(F)):
+                F[i] = davint(
+                    self.a,
+                    self.gsd.dnda(self.a) * f[:, i],
+                    len(self.a),
+                    self.a[0],
+                    self.a[-1],
+                )[0]
+
         return F
 
     def update(self, **keywords):

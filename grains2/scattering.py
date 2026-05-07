@@ -14,7 +14,7 @@ scattering --- Scattering models
 
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from functools import wraps
 import numpy as np
 from numpy import pi

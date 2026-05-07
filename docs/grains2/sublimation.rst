@@ -23,11 +23,15 @@ Calculate the temperature and sublimation rate of a 1.0 μm pure water ice grain
    >>> print(sublimation.phi()[0], "kg/m2/s")  # doctest: +FLOAT_CMP
    1.35242694e-07 kg/m2/s
 
+.. note::
+
+   The mass loss assumes ice can sublimate over 100% of the surface.  This is appropriate for pure ice grains, but is an approximation/simplification for mixtures of ice and dust or vacuum.
+
 
 Grain sublimation lifetime
 --------------------------
 
-Grain lifetimes may be calculated with the ``SublimationLTE.lifetime()`` method.  This requires a list of grain radii, so that it can integrate :math:`da/dt` from :math:`a_i` to :math:`a_0`.  Formally, for a grain to sublimate to :math:`a=0` approaches infinity.  In order to avoid this non-physical scenario, ``lifetime`` will sublimate the grain from :math:`a_0` to 0 using a constant radius loss rate (:math:`da/dt|a_0`).  Users must decide for themselves what to use for :math:`a_0`.
+Grain lifetimes may be calculated with the ``SublimationLTE.lifetime()`` method.  This requires a list of grain radii, so that it can integrate :math:`da/dt` from :math:`a_i` to :math:`a_0`.  Formally, the time for a grain to sublimate to :math:`a=0` approaches infinity.  In order to avoid this non-physical scenario, ``lifetime`` will sublimate the grain from :math:`a_0` to 0 using a constant radius loss rate (:math:`da/dt|a_0`).  Users must decide for themselves what to use for :math:`a_0`.
 
 Calculate the lifetime of a 1.0 μm water ice grain at 1.0 au, with and without considerations for solar wind sputtering:
 

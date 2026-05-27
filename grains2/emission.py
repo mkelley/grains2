@@ -394,7 +394,7 @@ class Harker07(Coma):
     def rh(self):
         return self._rh
 
-    def update(**kwargs):
+    def update(self, **kwargs):
         """Update the model parameters.
 
         Parameters
